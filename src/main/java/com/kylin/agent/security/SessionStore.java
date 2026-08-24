@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,6 +71,22 @@ public class SessionStore {
         if (token != null) {
             sessions.remove(token);
         }
+    }
+
+    public int invalidateForUser(String username) {
+        if (username == null) {
+            return 0;
+        }
+        List<String> tokens = new ArrayList<>();
+        for (SessionInfo s : sessions.values()) {
+            if (username.equals(s.username())) {
+                tokens.add(s.token());
+            }
+        }
+        for (String token : tokens) {
+            sessions.remove(token);
+        }
+        return tokens.size();
     }
 
     public int size() {

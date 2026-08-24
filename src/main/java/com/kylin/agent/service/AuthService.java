@@ -67,6 +67,11 @@ public class AuthService {
             throw AppException.unauthenticated("account locked");
         }
 
+        if (user != null && !user.isEnabled()) {
+            audit.append("auth", username, "login", "user:" + username, "disabled", Map.of());
+            throw AppException.unauthenticated("account disabled");
+        }
+
         if (user == null || !hasher.verify(password, user.getPasswordHash())) {
             if (user != null) {
                 int attempts = user.getFailedAttempts() + 1;

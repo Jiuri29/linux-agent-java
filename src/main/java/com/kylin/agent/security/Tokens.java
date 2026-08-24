@@ -20,6 +20,16 @@ public class Tokens {
         return "csrf-" + randomToken();
     }
 
+    public String shortId() {
+        byte[] bytes = new byte[4];
+        random.nextBytes(bytes);
+        StringBuilder sb = new StringBuilder(8);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
     private String randomToken() {
         byte[] bytes = new byte[TOKEN_BYTES];
         random.nextBytes(bytes);

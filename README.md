@@ -74,12 +74,18 @@ src/main/java/com/kylin/agent/
 
 1. ✅ 工程骨架 + 统一响应/错误码 + 健康检查
 2. ✅ 认证/会话/CSRF/RBAC + 审计 Hash 链
-3. ⬜ 资产中心 → 服务目录 → 事件工单
-4. ⬜ 监控采集（/proc + 只读命令）+ 告警规则
-5. ⬜ 受控终端 / 文件边界 / 护栏 / 结构化审批执行器
-6. ⬜ ChatOps / MCP 工具 / 执行编排 / 自动化验收
-7. ⬜ 契约测试对齐原版 `tests/contract`、`tests/api` 断言
-8. ⬜ systemd/RPM/离线包交付（jpackage）
+3. ✅ 成员管理 + 角色目录/自定义角色（`/api/users*` `/api/roles*`）
+4. ✅ 资产与拓扑中心（CRUD、分组、标签、应用、端口、依赖边、快照、同步 manual/local/config）
+5. ✅ OS 只读感知采集 + 监控快照/历史 + 告警规则引擎（模拟、确认/升级/恢复、抑制、通知）+ 风险扫描
+6. ⬜ 服务中心与配置版本（diff/drift/rollback）
+7. ⬜ 受控终端 / 文件管理
+8. ⬜ 安全护栏
+9. ⬜ ChatOps / MCP 工具 / Agent API 配置
+10. ⬜ 平台健康与管理员接口（admin/summary、`/metrics` Prometheus）
+11. ⬜ 审计查询/导出/归档/报表完善
+12. ⬜ 自动化验收 + 部署交付（systemd/RPM/离线包）
+
+**已按需求裁剪**：事件工单、结构化审批执行器。
 
 ## 运行测试
 
