@@ -48,7 +48,14 @@ public class PermissionMapper {
             new Rule("POST", "/api/monitor/alerts/**", "monitor:manage"),
             new Rule("POST", "/api/monitor/suppressions", "monitor:manage"),
             new Rule("GET", "/api/os/**", "asset:read"),
-            new Rule("GET", "/api/risk/scan", "risk:scan"));
+            new Rule("GET", "/api/risk/scan", "risk:scan"),
+
+            new Rule("POST", "/api/services/config/versions", "config:modify"),
+            new Rule("POST", "/api/services/config/rollback", "config:rollback"),
+            new Rule("POST", "/api/services/**", "service:operate"),
+            new Rule("POST", "/api/services", "service:operate"),
+            new Rule("*", "/api/services/**", "service:read"),
+            new Rule("*", "/api/services", "service:read"));
 
     public Optional<String> permissionFor(String method, String path) {
         for (Rule rule : rules) {

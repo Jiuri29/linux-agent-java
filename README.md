@@ -77,7 +77,7 @@ src/main/java/com/kylin/agent/
 3. ✅ 成员管理 + 角色目录/自定义角色（`/api/users*` `/api/roles*`）
 4. ✅ 资产与拓扑中心（CRUD、分组、标签、应用、端口、依赖边、快照、同步 manual/local/config）
 5. ✅ OS 只读感知采集 + 监控快照/历史 + 告警规则引擎（模拟、确认/升级/恢复、抑制、通知）+ 风险扫描
-6. ⬜ 服务中心与配置版本（diff/drift/rollback）
+6. ✅ 服务中心与配置版本（保存/详情/diff/drift/rollback/lifecycle/变更记录）
 7. ⬜ 受控终端 / 文件管理
 8. ⬜ 安全护栏
 9. ⬜ ChatOps / MCP 工具 / Agent API 配置
