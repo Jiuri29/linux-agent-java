@@ -1,0 +1,36 @@
+server:
+  address: ${OPS_AGENT_BIND:127.0.0.1}
+  port: ${OPS_AGENT_PORT:18080}
+
+spring:
+  application:
+    name: kylin-aiops-agent
+  jackson:
+    default-property-inclusion: non_null
+
+logging:
+  pattern:
+    level: '%d{yyyy-MM-dd HH:mm:ss} %-5level [%X{requestId:-}] %logger{36} - %msg%n'
+
+ops-agent:
+  data-dir: ${OPS_AGENT_DATA_DIR:}
+  audit-log: ${OPS_AGENT_AUDIT_LOG:}
+  auth-store: ${OPS_AGENT_AUTH_STORE:}
+  asset-store: ${OPS_AGENT_ASSET_STORE:}
+  service-center-store: ${OPS_AGENT_SERVICE_CENTER_STORE:}
+  incident-store: ${OPS_AGENT_INCIDENT_STORE:}
+  api-config: ${OPS_AGENT_API_CONFIG:}
+  execution-store: ${OPS_AGENT_EXECUTION_STORE:}
+  guardrails-store: ${OPS_AGENT_GUARDRAILS_STORE:}
+  guardrails-approval-store: ${OPS_AGENT_GUARDRAILS_APPROVAL_STORE:}
+  terminal-log-dir: ${OPS_AGENT_TERMINAL_LOG_DIR:}
+  orchestration-dir: ${OPS_AGENT_ORCHESTRATION_DIR:}
+  mcp-store: ${OPS_AGENT_MCP_STORE:}
+  mcp-invocation-log: ${OPS_AGENT_MCP_INVOCATION_LOG:}
+  chatops-store: ${OPS_AGENT_CHATOPS_STORE:}
+  alert-rules-config: ${OPS_AGENT_ALERT_RULES_CONFIG:}
+  alert-state-store: ${OPS_AGENT_ALERT_STATE_STORE:}
+  metrics-history-store: ${OPS_AGENT_METRICS_HISTORY_STORE:}
+  latest-snapshot-store: ${OPS_AGENT_LATEST_SNAPSHOT_STORE:}
+  test-run-dir: ${OPS_AGENT_TEST_RUN_DIR:}
+  frontend-dir: ${OPS_AGENT_FRONTEND_DIR:}
