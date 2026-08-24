@@ -8,6 +8,7 @@ import com.kylin.agent.repository.ServiceCenterRepository;
 import com.kylin.agent.security.AuthInterceptor;
 import com.kylin.agent.security.Tokens;
 import com.kylin.agent.web.AppException;
+import com.kylin.agent.web.TextDiff;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -181,7 +182,8 @@ public class ServiceCenterService {
             fromContent = nullToEmpty(versionDetail(fromId).content());
             toContent = nullToEmpty(versionDetail(toId).content());
         }
-        List<Map<String, Object>> lines = diffLines(fromContent.split("\n", -1), toContent.split("\n", -1));
+        List<Map<String, Object>> lines =
+                TextDiff.diffLines(fromContent.split("\n", -1), toContent.split("\n", -1));
         long added = lines.stream().filter(l -> "add".equals(l.get("op"))).count();
         long removed = lines.stream().filter(l -> "remove".equals(l.get("op"))).count();
         return Map.of("lines", lines, "added", added, "removed", removed);
@@ -215,7 +217,7 @@ public class ServiceCenterService {
         result.put("drifted", drifted);
         if (drifted) {
             List<Map<String, Object>> lines =
-                    diffLines(nullToEmpty(baseline.content()).split("\n", -1), disk.split("\n", -1));
+                    TextDiff.diffLines(nullToEmpty(baseline.content()).split("\n", -1), disk.split("\n", -1));
             result.put("diff", lines);
         }
         return result;
@@ -320,51 +322,6 @@ public class ServiceCenterService {
         } catch (IOException e) {
             throw AppException.validation("failed to write config file");
         }
-    }
-
-    private static List<Map<String, Object>> diffLines(String[] from, String[] to) {
-        int n = from.length;
-        int m = to.length;
-        int[][] dp = new int[n + 1][m + 1];
-        for (int i = n - 1; i >= 0; i--) {
-            for (int j = m - 1; j >= 0; j--) {
-                dp[i][j] = from[i].equals(to[j])
-                        ? dp[i + 1][j + 1] + 1
-                        : Math.max(dp[i + 1][j], dp[i][j + 1]);
-            }
-        }
-        List<Map<String, Object>> out = new ArrayList<>();
-        int i = 0;
-        int j = 0;
-        while (i < n && j < m) {
-            if (from[i].equals(to[j])) {
-                out.add(line("same", from[i]));
-                i++;
-                j++;
-            } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-                out.add(line("remove", from[i]));
-                i++;
-            } else {
-                out.add(line("add", to[j]));
-                j++;
-            }
-        }
-        while (i < n) {
-            out.add(line("remove", from[i]));
-            i++;
-        }
-        while (j < m) {
-            out.add(line("add", to[j]));
-            j++;
-        }
-        return out;
-    }
-
-    private static Map<String, Object> line(String op, String text) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("op", op);
-        map.put("text", text);
-        return map;
     }
 
     private ServiceEntry findService(ServiceCenterRepository.ServiceCenterDocument doc, String idOrName) {

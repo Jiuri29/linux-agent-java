@@ -7,6 +7,10 @@ spring:
     name: kylin-aiops-agent
   jackson:
     default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
 
 logging:
   pattern:
@@ -33,4 +37,5 @@ ops-agent:
   metrics-history-store: ${OPS_AGENT_METRICS_HISTORY_STORE:}
   latest-snapshot-store: ${OPS_AGENT_LATEST_SNAPSHOT_STORE:}
   test-run-dir: ${OPS_AGENT_TEST_RUN_DIR:}
+  file-roots: ${OPS_AGENT_FILE_ROOTS:}
   frontend-dir: ${OPS_AGENT_FRONTEND_DIR:}

@@ -55,7 +55,23 @@ public class PermissionMapper {
             new Rule("POST", "/api/services/**", "service:operate"),
             new Rule("POST", "/api/services", "service:operate"),
             new Rule("*", "/api/services/**", "service:read"),
-            new Rule("*", "/api/services", "service:read"));
+            new Rule("*", "/api/services", "service:read"),
+
+            new Rule("POST", "/api/terminal/templates/render", "terminal:view"),
+            new Rule("POST", "/api/terminal/templates", "terminal:template:manage"),
+            new Rule("POST", "/api/terminal/run", "terminal:execute"),
+            new Rule("*", "/api/terminal/templates", "terminal:view"),
+            new Rule("GET", "/api/terminal/history", "terminal:view"),
+            new Rule("GET", "/api/terminal/replay", "terminal:replay:view"),
+
+            new Rule("GET", "/api/files/download", "file:download"),
+            new Rule("GET", "/api/files/**", "file:read"),
+            new Rule("GET", "/api/files", "file:read"),
+            new Rule("POST", "/api/files/write", "file:write"),
+            new Rule("POST", "/api/files/upload", "file:upload"),
+            new Rule("POST", "/api/files/delete", "file:delete"),
+            new Rule("POST", "/api/files/restore", "file:restore"),
+            new Rule("POST", "/api/files/operation/**", "file:plan"));
 
     public Optional<String> permissionFor(String method, String path) {
         for (Rule rule : rules) {

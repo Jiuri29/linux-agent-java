@@ -24,6 +24,7 @@ public record AppProperties(
         String metricsHistoryStore,
         String latestSnapshotStore,
         String testRunDir,
+        String fileRoots,
         String frontendDir) {
 
     public AppProperties {
@@ -48,6 +49,7 @@ public record AppProperties(
         metricsHistoryStore = orDefault(metricsHistoryStore, base + "/monitor/metrics.jsonl");
         latestSnapshotStore = orDefault(latestSnapshotStore, base + "/monitor/latest-snapshot.json");
         testRunDir = orDefault(testRunDir, base + "/test-runs");
+        fileRoots = orDefault(fileRoots, base + "/files");
         frontendDir = orDefault(frontendDir, "frontend/build");
     }
 
