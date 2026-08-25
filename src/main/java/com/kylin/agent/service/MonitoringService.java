@@ -22,8 +22,7 @@ public class MonitoringService {
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
 
-    private final OsCollectors collectors;
-    private final MonitorRepository repository;
+    private final OsCollectors collectors;    private final MonitorRepository repository;
     private final Tokens tokens;
     private final ObjectMapper mapper;
     private final AuditService audit;

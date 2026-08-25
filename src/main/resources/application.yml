@@ -38,4 +38,5 @@ ops-agent:
   latest-snapshot-store: ${OPS_AGENT_LATEST_SNAPSHOT_STORE:}
   test-run-dir: ${OPS_AGENT_TEST_RUN_DIR:}
   file-roots: ${OPS_AGENT_FILE_ROOTS:}
+  metrics-public: ${OPS_AGENT_METRICS_PUBLIC:false}
   frontend-dir: ${OPS_AGENT_FRONTEND_DIR:}

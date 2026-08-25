@@ -75,6 +75,18 @@ public class PermissionMapper {
 
             new Rule("*", "/api/guardrails/**", "guardrail:evaluate"),
 
+            new Rule("GET", "/api/audit/export", "audit:export"),
+            new Rule("GET", "/api/v1/audit/export", "audit:export"),
+            new Rule("POST", "/api/audit/archive", "audit:archive"),
+            new Rule("POST", "/api/v1/audit/archive", "audit:archive"),
+            new Rule("GET", "/api/audit/integrity", "audit:verify"),
+            new Rule("GET", "/api/v1/audit/integrity", "audit:verify"),
+            new Rule("GET", "/api/audit/**", "audit:read"),
+            new Rule("GET", "/api/v1/audit/**", "audit:read"),
+
+            new Rule("GET", "/api/admin/**", "admin:read"),
+            new Rule("GET", "/api/runtime/**", "asset:read"),
+
             new Rule("POST", "/api/chatops/**", "chatops:use"),
             new Rule("POST", "/api/chatops", "chatops:use"),
             new Rule("*", "/api/chatops/**", "chatops:use"),

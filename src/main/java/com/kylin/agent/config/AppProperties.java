@@ -25,6 +25,7 @@ public record AppProperties(
         String latestSnapshotStore,
         String testRunDir,
         String fileRoots,
+        boolean metricsPublic,
         String frontendDir) {
 
     public AppProperties {
