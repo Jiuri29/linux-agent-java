@@ -71,7 +71,9 @@ public class PermissionMapper {
             new Rule("POST", "/api/files/upload", "file:upload"),
             new Rule("POST", "/api/files/delete", "file:delete"),
             new Rule("POST", "/api/files/restore", "file:restore"),
-            new Rule("POST", "/api/files/operation/**", "file:plan"));
+            new Rule("POST", "/api/files/operation/**", "file:plan"),
+
+            new Rule("*", "/api/guardrails/**", "guardrail:evaluate"));
 
     public Optional<String> permissionFor(String method, String path) {
         for (Rule rule : rules) {
