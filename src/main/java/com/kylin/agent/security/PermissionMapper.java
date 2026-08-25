@@ -87,6 +87,9 @@ public class PermissionMapper {
             new Rule("GET", "/api/admin/**", "admin:read"),
             new Rule("GET", "/api/runtime/**", "asset:read"),
 
+            new Rule("*", "/api/tests/**", "test:run"),
+            new Rule("*", "/api/tests", "test:run"),
+
             new Rule("POST", "/api/chatops/**", "chatops:use"),
             new Rule("POST", "/api/chatops", "chatops:use"),
             new Rule("*", "/api/chatops/**", "chatops:use"),

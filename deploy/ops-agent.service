@@ -1,0 +1,25 @@
+[Unit]
+Description=Kylin AIOps Agent (Java Edition)
+Documentation=https://github.com/diaofenyuan/linux-agent-java
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kylin-agent
+Group=kylin-agent
+EnvironmentFile=/etc/default/kylin-aiops-agent
+WorkingDirectory=/opt/kylin-aiops-agent
+ExecStart=/usr/bin/java -XX:MaxRAMPercentage=60 -jar /opt/kylin-aiops-agent/kylin-aiops-agent.jar
+Restart=on-failure
+RestartSec=3
+SuccessExitStatus=143
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/kylin-aiops-agent /var/log/kylin-aiops-agent
+
+[Install]
+WantedBy=multi-user.target
