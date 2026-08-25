@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: kylin-aiops-agent
+    name: linux-aiops-agent
   jackson:
     default-property-inclusion: non_null
   servlet:

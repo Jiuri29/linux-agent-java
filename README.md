@@ -1,10 +1,10 @@
-# kylin-aiops-agent（Java 版）
+# linux-aiops-agent（Java 版）
 
-面向麒麟操作系统的安全智能运维 Agent 的 Java 重写版，移植自 [diaofenyuan/Linux-agent](https://github.com/diaofenyuan/Linux-agent)。
+面向 Linux 操作系统的安全智能运维 Agent 的 Java 重写版，移植自 [diaofenyuan/Linux-agent](https://github.com/diaofenyuan/Linux-agent)。
 
 - 后端：Spring Boot 3.x + Java 17，内嵌 Tomcat，默认监听 `127.0.0.1:18080`
 - 存储：与原版一致的 JSON/JSONL 本地文件（无外部数据库）
-- 前端：复用原仓库 `frontend/`（Vue 3 + Vite）构建产物，后端静态托管
+- 前端：自建 Vue 3 + TypeScript + Vite + Element Plus 控制台（`frontend/`），构建产物输出至 `frontend/build`，后端静态托管
 
 ## 环境要求
 
@@ -18,7 +18,7 @@ mvn spring-boot:run
 
 # 或打包运行
 mvn -DskipTests package
-java -jar target/kylin-aiops-agent-1.0.0.jar
+java -jar target/linux-aiops-agent-1.0.0.jar
 ```
 
 健康检查：
@@ -30,7 +30,7 @@ curl http://127.0.0.1:18080/api/health
 ## 目录结构
 
 ```
-src/main/java/com/kylin/agent/
+src/main/java/com/Linux/agent/
 ├── ApiApplication.java      # 入口（对应 backend/ops_agent_api.py）
 ├── config/                  # AppProperties（OPS_AGENT_* 环境变量）、WebConfig
 ├── web/                     # 统一响应、错误码、异常、请求ID、分页
@@ -95,11 +95,26 @@ mvn test
 
 ## 接入前端
 
-克隆原仓库并构建前端后，将产物目录通过环境变量指向即可：
+前端已内置（Vue 3 + TS + Element Plus），开发与构建：
 
 ```bash
-git clone https://github.com/diaofenyuan/Linux-agent ../Linux-agent
-npm --prefix ../Linux-agent/frontend install
-npm --prefix ../Linux-agent/frontend run build
-OPS_AGENT_FRONTEND_DIR=../Linux-agent/frontend/build mvn spring-boot:run
+cd frontend
+npm install
+
+# 开发模式（代理 /api 到 127.0.0.1:18080）
+npm run dev
+
+# 类型检查 + 构建产物到 frontend/build（后端默认托管目录）
+npm run typecheck
+npm run build
 ```
+
+构建后直接启动后端即可访问控制台：
+
+```bash
+mvn -DskipTests package
+java -jar target/linux-aiops-agent-1.0.0.jar
+# 浏览器打开 http://127.0.0.1:18080/
+```
+
+首次访问会引导初始化管理员账号；登录后可使用全部模块：总览、资产中心、监控告警、服务中心、受控终端、文件管理、安全护栏、ChatOps、MCP 工具、Agent API 配置、审计中心、用户与角色、验收测试。

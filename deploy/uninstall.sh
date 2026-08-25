@@ -2,10 +2,10 @@
 set -euo pipefail
 
 SERVICE_NAME=ops-agent
-APP_HOME=/opt/kylin-aiops-agent
-DATA_DIR=/var/lib/kylin-aiops-agent
-LOG_DIR=/var/log/kylin-aiops-agent
-ENV_FILE=/etc/default/kylin-aiops-agent
+APP_HOME=/opt/linux-aiops-agent
+DATA_DIR=/var/lib/linux-aiops-agent
+LOG_DIR=/var/log/linux-aiops-agent
+ENV_FILE=/etc/default/linux-aiops-agent
 
 if [[ $EUID -ne 0 ]]; then
   echo "please run as root" >&2

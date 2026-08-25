@@ -1,0 +1,48 @@
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+  background: #f5f7fa;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-card {
+  margin-bottom: 16px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', Consolas, Menlo, monospace;
+  font-size: 12px;
+}
+
+pre.output {
+  background: #0d1117;
+  color: #c9d1d9;
+  padding: 12px 14px;
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 420px;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: 'JetBrains Mono', Consolas, Menlo, monospace;
+}

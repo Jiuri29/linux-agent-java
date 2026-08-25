@@ -14,11 +14,11 @@ mkdir -p "$RPMBUILD_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' \
     --non-recursive exec:exec 2>/dev/null || echo 1.0.0)
 
-tar czf "$RPMBUILD_DIR/SOURCES/kylin-aiops-agent-${VERSION}.tar.gz" \
-    --transform "s|^|kylin-aiops-agent-${VERSION}/|" \
-    pom.xml src deploy packaging/rpm/kylin-aiops-agent.spec
+tar czf "$RPMBUILD_DIR/SOURCES/linux-aiops-agent-${VERSION}.tar.gz" \
+    --transform "s|^|linux-aiops-agent-${VERSION}/|" \
+    pom.xml src deploy packaging/rpm/linux-aiops-agent.spec
 
-rpmbuild -ba packaging/rpm/kylin-aiops-agent.spec \
+rpmbuild -ba packaging/rpm/linux-aiops-agent.spec \
     --define "_topdir $RPMBUILD_DIR" \
     --define "_sourcedir $RPMBUILD_DIR/SOURCES" \
     --define "version ${VERSION}"
