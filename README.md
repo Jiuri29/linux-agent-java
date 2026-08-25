@@ -80,7 +80,7 @@ src/main/java/com/kylin/agent/
 6. ✅ 服务中心与配置版本（保存/详情/diff/drift/rollback/lifecycle/变更记录）
 7. ✅ 受控终端（allowlist 只读命令、模板/渲染、历史/回放）+ 文件管理（浏览/读写/上传下载、备份/diff/恢复、路径边界防护）
 8. ✅ 安全护栏（内置种子规则 + 自定义规则 CRUD/启停/测试、豁免管理、意图+命令风险评估、审批请求记录）
-9. ⬜ ChatOps / MCP 工具 / Agent API 配置
+9. ✅ ChatOps（外部 Agent API 调用 + 命令提取 + 护栏复核 + 高风险确认流）/ MCP 工具（内置只读工具集、JSON-RPC facade、插件注册启停卸载）/ Agent API 配置（地址白名单 SSRF 防护、密钥掩码、连通性测试）
 10. ⬜ 平台健康与管理员接口（admin/summary、`/metrics` Prometheus）
 11. ⬜ 审计查询/导出/归档/报表完善
 12. ⬜ 自动化验收 + 部署交付（systemd/RPM/离线包）

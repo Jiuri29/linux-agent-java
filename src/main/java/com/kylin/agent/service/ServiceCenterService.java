@@ -37,6 +37,14 @@ public class ServiceCenterService {
         return List.copyOf(repository.load().services);
     }
 
+    public List<Map<String, Object>> listMaps() {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ServiceEntry entry : repository.load().services) {
+            result.add(toMap(entry));
+        }
+        return result;
+    }
+
     public Map<String, Object> upsert(Map<String, Object> body) {
         String id = str(body.get("id"));
         ServiceCenterRepository.ServiceCenterDocument doc = repository.load();

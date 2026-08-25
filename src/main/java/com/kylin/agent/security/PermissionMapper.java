@@ -73,7 +73,24 @@ public class PermissionMapper {
             new Rule("POST", "/api/files/restore", "file:restore"),
             new Rule("POST", "/api/files/operation/**", "file:plan"),
 
-            new Rule("*", "/api/guardrails/**", "guardrail:evaluate"));
+            new Rule("*", "/api/guardrails/**", "guardrail:evaluate"),
+
+            new Rule("POST", "/api/chatops/**", "chatops:use"),
+            new Rule("POST", "/api/chatops", "chatops:use"),
+            new Rule("*", "/api/chatops/**", "chatops:use"),
+
+            new Rule("POST", "/api/mcp/plugins/register", "mcp:manage"),
+            new Rule("POST", "/api/mcp/plugins/status", "mcp:manage"),
+            new Rule("POST", "/api/mcp/plugins/uninstall", "mcp:manage"),
+            new Rule("POST", "/api/mcp/tools/status", "mcp:manage"),
+            new Rule("POST", "/api/mcp/invoke", "mcp:invoke"),
+            new Rule("POST", "/api/mcp/rpc", "mcp:invoke"),
+            new Rule("*", "/api/mcp/**", "mcp:invoke"),
+
+            new Rule("GET", "/api/config/agent-api", "config:manage"),
+            new Rule("GET", "/api/config/agent-api/test", "config:manage"),
+            new Rule("POST", "/api/config/agent-api/test", "config:manage"),
+            new Rule("POST", "/api/config/agent-api", "config:manage"));
 
     public Optional<String> permissionFor(String method, String path) {
         for (Rule rule : rules) {

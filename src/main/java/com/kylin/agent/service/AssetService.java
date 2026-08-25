@@ -46,6 +46,14 @@ public class AssetService {
         this.properties = properties;
     }
 
+    public List<Map<String, Object>> listAllMaps() {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Asset asset : repository.load().assets) {
+            result.add(toMap(asset));
+        }
+        return result;
+    }
+
     public Map<String, Object> list(jakarta.servlet.http.HttpServletRequest request) {
         int page = intParam(request, "page", 1, 1);
         int pageSize = intParam(request, "page_size", 20, 1);
