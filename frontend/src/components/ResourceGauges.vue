@@ -42,13 +42,11 @@ function fmtKb(kb: unknown): string {
   return (v / 1024).toFixed(0) + ' MB'
 }
 
-function levelColor(p: number | null): string | Array<any> {
-  if (p === null) return '#dcdfe6'
-  return [
-    { color: '#67c23a', percentage: 60 },
-    { color: '#e6a23c', percentage: 85 },
-    { color: '#f56c6c', percentage: 100 },
-  ]
+function levelColor(p: number | null): string {
+  if (p === null) return '#a8abb2'
+  if (p >= 85) return '#f56c6c'
+  if (p >= 60) return '#e6a23c'
+  return '#67c23a'
 }
 
 const gauges = computed(() => {

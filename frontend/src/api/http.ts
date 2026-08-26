@@ -68,9 +68,20 @@ http.interceptors.response.use(
     }
     const code = String(body?.code ?? `http_${status ?? 0}`)
     let message = String(body?.message ?? error.message)
+    const isLoginCall = String(error.config?.url ?? '').includes('/api/auth/login')
     if (status === 401 || code === 'unauthenticated') {
-      message = '会话已失效，请重新登录'
-      onUnauthorized?.()
+      if (isLoginCall) {
+        const loginMsg: Record<string, string> = {
+          'invalid credentials': '用户名或密码错误',
+          'account locked': '账户已锁定，请稍后再试',
+          'account disabled': '账户已被停用，请联系管理员',
+          invalid_credentials: '用户名或密码错误',
+        }
+        message = loginMsg[message] ?? '用户名或密码错误'
+      } else {
+        message = '会话已失效，请重新登录'
+        onUnauthorized?.()
+      }
     } else if (code === 'csrf_required' || status === 403) {
       message = body?.message ? String(body.message) : '权限不足或 CSRF 校验失败'
     }

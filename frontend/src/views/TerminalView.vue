@@ -24,7 +24,7 @@
         <div class="toolbar"><el-button size="small" @click="loadHistory">刷新</el-button></div>
         <el-table :data="historyRows" size="small" border max-height="320">
           <el-table-column prop="ts" label="时间" min-width="160">
-            <template #default="{ row }">{{ row.ts || row.created_at || '-' }}</template>
+            <template #default="{ row }">{{ fmtTs(row.ts || row.created_at) }}</template>
           </el-table-column>
           <el-table-column prop="operator" label="操作人" min-width="100" />
           <el-table-column prop="command" label="命令" min-width="220" show-overflow-tooltip>
@@ -101,6 +101,13 @@ const selectedTemplate = ref('')
 const tplDlg = reactive({ visible: false, name: '', template: '' })
 const paramDlg = reactive({ visible: false, paramsText: '{}', templateId: '' })
 
+function fmtTs(ts: unknown): string {
+  const s = String(ts ?? '')
+  const d = new Date(s)
+  if (!Number.isFinite(d.getTime())) return '-'
+  return d.toLocaleString('zh-CN', { hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 async function loadTemplates() {
   templates.value = await api.terminal.templates()
 }
@@ -117,7 +124,7 @@ async function run() {
     output.value =
       typeof res === 'string'
         ? res
-        : String(res.stdout ?? res.output ?? pretty(res))
+        : String(res.stdout || res.stderr || res.output || pretty(res) || '')
     await loadHistory()
   } catch {
     /* 拦截器已提示 */

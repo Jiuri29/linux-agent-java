@@ -108,6 +108,7 @@ export const api = {
 
   files: {
     list: (path?: string): Promise<Any> => http.get('/api/files/list', { params: path ? { path } : undefined }),
+    roots: (): Promise<Any> => http.get('/api/files/roots'),
     read: (path: string): Promise<Any> => http.get('/api/files/read', { params: { path } }),
     write: (path: string, content: string): Promise<Any> =>
       http.post('/api/files/write', { path, content }),

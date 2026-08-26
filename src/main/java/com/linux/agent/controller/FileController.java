@@ -25,6 +25,11 @@ public class FileController {
         this.fileService = fileService;
     }
 
+    @GetMapping("/api/files/roots")
+    public Map<String, Object> roots() {
+        return fileService.rootsInfo();
+    }
+
     @GetMapping({"/api/files/list", "/api/v1/files/list"})
     public Object list(@RequestParam(value = "path", required = false) String path,
                        HttpServletRequest request) {

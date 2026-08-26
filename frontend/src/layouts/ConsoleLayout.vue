@@ -108,7 +108,9 @@
       <el-main class="main">
         <router-view v-slot="{ Component, route }">
           <transition name="fade-slide" mode="out-in">
-            <component :is="Component" :key="route.fullPath" />
+            <div :key="route.fullPath" class="route-view">
+              <component :is="Component" />
+            </div>
           </transition>
         </router-view>
       </el-main>
@@ -259,6 +261,9 @@ html.dark .user-chip:hover {
 .main {
   padding: 18px 20px;
   overflow-y: auto;
+}
+.route-view {
+  width: 100%;
 }
 .fade-slide-enter-active,
 .fade-slide-leave-active {

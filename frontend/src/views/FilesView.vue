@@ -93,9 +93,10 @@ import api from '@/api'
 import { downloadFile } from '@/api/http'
 
 const loading = ref(false)
-const path = ref('/')
+const path = ref('')
 const entries = ref<Record<string, any>[]>([])
-const targetPath = ref('/tmp/upload.bin')
+const targetPath = ref('')
+const roots = ref<string[]>([])
 const picked = ref<File | null>(null)
 const uploading = ref(false)
 
@@ -119,7 +120,8 @@ async function browse() {
     const res = await api.files.list(path.value || undefined)
     const list = Array.isArray(res) ? res : res.entries ?? res.items ?? []
     entries.value = list as Record<string, any>[]
-    targetPath.value = joinPath(path.value || '/', 'upload.bin')
+    const base = path.value || roots.value[0] || '/'
+    targetPath.value = joinPath(base, 'upload.bin')
   } finally {
     loading.value = false
   }
@@ -131,9 +133,9 @@ function joinPath(dir: string, name: string) {
 }
 
 function goUp() {
-  const parts = path.value.replace(/[\\/]+$/, '').split(/[\\/]/)
+  const parts = (path.value || roots.value[0] || '').replace(/[\\/]+$/, '').split(/[\\/]/)
   parts.pop()
-  path.value = parts.join('/') || '/'
+  path.value = parts.join('/') || roots.value[0] || ''
   browse()
 }
 
@@ -172,7 +174,7 @@ async function removeEntry(row: Record<string, any>) {
 function onPickFile(e: Event) {
   const files = (e.target as HTMLInputElement).files
   picked.value = files && files.length ? files[0] : null
-  if (picked.value) targetPath.value = joinPath(path.value || '/', picked.value.name)
+  if (picked.value) targetPath.value = joinPath(path.value || roots.value[0] || '/', picked.value.name)
 }
 
 async function upload() {
@@ -214,5 +216,14 @@ async function restoreBackup(row: Record<string, any>) {
   ElMessage.success('已恢复')
 }
 
-onMounted(browse)
+onMounted(async () => {
+  try {
+    const info = await api.files.roots()
+    if (Array.isArray(info?.roots)) roots.value = (info as any).roots as string[]
+    path.value = String(info?.default ?? roots.value[0] ?? '')
+  } catch {
+    /* 拦截器已提示 */
+  }
+  browse()
+})
 </script>

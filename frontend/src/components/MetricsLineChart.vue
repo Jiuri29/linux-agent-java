@@ -42,8 +42,8 @@ function render() {
     areaStyle: {
       opacity: 1,
       color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-        { offset: 0, color: def.color + '3d' },
-        { offset: 1, color: def.color + '05' },
+        { offset: 0, color: def.color + '17' },
+        { offset: 1, color: def.color + '02' },
       ]),
     },
     emphasis: { focus: 'series' as const },

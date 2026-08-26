@@ -24,7 +24,7 @@
 
       <el-table :data="events" size="small" border max-height="480">
         <el-table-column prop="ts" label="时间" min-width="165">
-          <template #default="{ row }">{{ row.ts || row.timestamp || '-' }}</template>
+          <template #default="{ row }">{{ fmtTs(row.ts || row.timestamp) }}</template>
         </el-table-column>
         <el-table-column prop="user" label="用户" width="110" />
         <el-table-column prop="event_type" label="事件类型" min-width="120" />
@@ -36,7 +36,11 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="detail" label="详情" min-width="240" show-overflow-tooltip />
+        <el-table-column label="详情" min-width="240" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="mono">{{ fmtDetail(row.detail) }}</span>
+          </template>
+        </el-table-column>
       </el-table>
     </el-tab-pane>
 
@@ -88,6 +92,24 @@ const q = reactive({
 
 function pretty(v: unknown) {
   return JSON.stringify(v, null, 2)
+}
+
+function fmtTs(ts: unknown): string {
+  const s = String(ts ?? '')
+  const d = new Date(s)
+  if (!Number.isFinite(d.getTime())) return '-'
+  return d.toLocaleString('zh-CN', { hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
+function fmtDetail(d: unknown): string {
+  if (d == null || d === '') return '-'
+  if (typeof d === 'string') return d
+  try {
+    const s = JSON.stringify(d)
+    return s && s !== '{}' ? s.slice(0, 200) : '-'
+  } catch {
+    return String(d)
+  }
 }
 
 function queryParams() {

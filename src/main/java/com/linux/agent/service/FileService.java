@@ -363,7 +363,13 @@ public class FileService {
         List<Path> parsed = new ArrayList<>();
         for (String root : properties.fileRoots().split(",")) {
             if (!root.isBlank()) {
-                parsed.add(Path.of(root.trim()).normalize().toAbsolutePath());
+                Path dir = Path.of(root.trim()).normalize().toAbsolutePath();
+                try {
+                    Files.createDirectories(dir);
+                } catch (IOException e) {
+                    throw new UncheckedIOException("failed to prepare file root: " + dir, e);
+                }
+                parsed.add(dir);
             }
         }
         allowedRoots = List.copyOf(parsed);
@@ -371,7 +377,18 @@ public class FileService {
     }
 
     private String firstRoot() {
-        return roots().get(0).toString();
+        List<Path> roots = roots();
+        return roots.isEmpty()
+                ? Path.of("").toAbsolutePath().normalize().toString()
+                : roots.get(0).toString();
+    }
+
+    public Map<String, Object> rootsInfo() {
+        List<Path> roots = roots();
+        List<String> rootsList = roots.isEmpty()
+                ? List.of(firstRoot())
+                : roots.stream().map(Path::toString).toList();
+        return Map.of("roots", rootsList, "default", rootsList.get(0));
     }
 
     private static String normalize(String path) {

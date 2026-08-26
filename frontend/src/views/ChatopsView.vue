@@ -3,6 +3,7 @@
     <el-col :span="16">
       <el-card class="page-card" shadow="never" header="对话">
         <div ref="msgBox" class="msgs">
+          <el-empty v-if="!messages.length" description="描述你的运维意图，Agent 将评估并执行" :image-size="70" />
           <div v-for="(m, i) in messages" :key="i" :class="['bubble', m.role]">
             <div class="meta">{{ m.role === 'user' ? '我' : 'Agent' }} · {{ m.ts }}</div>
             <div class="text">{{ m.text }}</div>
@@ -37,7 +38,8 @@
         </div>
       </el-card>
       <el-card class="page-card" header="会话信息" shadow="never">
-        <pre class="output">{{ pretty(sessionInfo) }}</pre>
+        <pre v-if="sessionInfo" class="output">{{ pretty(sessionInfo) }}</pre>
+        <el-empty v-else description="暂无会话信息，发送一条意图后会话开始" :image-size="50" />
       </el-card>
     </el-col>
   </el-row>
@@ -99,8 +101,10 @@ async function send() {
       actions: actions.filter((a) => a.requires_confirm ?? true),
     })
     if (sessionId.value) sessionInfo.value = await ops.chatops.session(sessionId.value)
-  } catch {
-    /* 拦截器已提示 */
+  } catch (e) {
+    if (e && typeof e === 'object' && 'code' in e && (e as any).code === 'invalid_agent_api_config') {
+      ElMessage.warning('Agent API 尚未配置，请先到「Agent API」页启用外部模型配置')
+    }
   } finally {
     sending.value = false
     scrollBottom()
@@ -135,8 +139,8 @@ onMounted(loadTemplates)
 .msgs {
   height: 420px;
   overflow-y: auto;
-  background: #fafafa;
-  border: 1px solid #ebeef5;
+  background: var(--el-fill-color-lighter, #fafafa);
+  border: 1px solid var(--el-border-color-lighter, #ebeef5);
   border-radius: 6px;
   padding: 12px;
 }
@@ -145,12 +149,12 @@ onMounted(loadTemplates)
   margin-bottom: 12px;
   padding: 8px 12px;
   border-radius: 8px;
-  background: #fff;
-  border: 1px solid #e4e7ed;
+  background: var(--el-bg-color-overlay, #fff);
+  border: 1px solid var(--el-border-color-light, #e4e7ed);
 }
 .bubble.user {
   margin-left: auto;
-  background: #ecf5ff;
+  background: var(--el-color-primary-light-9, #ecf5ff);
 }
 .meta {
   font-size: 11px;
@@ -165,14 +169,14 @@ onMounted(loadTemplates)
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  background: #fdf6ec;
-  border: 1px solid #faecd8;
+  background: var(--el-color-warning-light-9, #fdf6ec);
+  border: 1px solid var(--el-color-warning-light-8, #faecd8);
   border-radius: 4px;
   margin-bottom: 6px;
 }
 .tpl {
   padding: 8px 10px;
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--el-border-color-lighter, #ebeef5);
   border-radius: 6px;
   margin-bottom: 8px;
   cursor: pointer;
