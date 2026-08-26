@@ -106,9 +106,9 @@
         </div>
       </el-header>
       <el-main class="main">
-        <router-view v-slot="{ Component }">
+        <router-view v-slot="{ Component, route }">
           <transition name="fade-slide" mode="out-in">
-            <component :is="Component" />
+            <component :is="Component" :key="route.fullPath" />
           </transition>
         </router-view>
       </el-main>
@@ -260,12 +260,13 @@ html.dark .user-chip:hover {
   padding: 18px 20px;
   overflow-y: auto;
 }
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s;
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
-.fade-enter-from,
-.fade-leave-to {
+.fade-slide-enter-from,
+.fade-slide-leave-to {
   opacity: 0;
+  transform: translateY(6px);
 }
 </style>
