@@ -1,5 +1,49 @@
 <template>
   <div>
+    <!-- 实时监测：主视觉区 -->
+    <el-card class="page-card hero-card" shadow="never">
+      <template #header>
+        <div class="row">
+          <div class="row">
+            <span class="hero-title">实时资源监测</span>
+            <el-tag size="small" type="success" effect="plain" round>
+              {{ autoRefresh ? `每 ${refreshInterval}s 刷新` : '已暂停' }}
+            </el-tag>
+          </div>
+          <div class="row" style="gap: 12px">
+            <span class="muted" style="margin: 0">
+              {{ latest?.hostname || '-' }} · 采样 {{ fmtTime(latest?.timestamp) }}
+            </span>
+            <el-switch v-model="autoRefresh" size="small" />
+            <el-select v-model="refreshInterval" size="small" style="width: 92px" :disabled="!autoRefresh">
+              <el-option :value="5" label="5 秒" />
+              <el-option :value="10" label="10 秒" />
+              <el-option :value="30" label="30 秒" />
+            </el-select>
+            <el-button size="small" type="primary" :loading="capturing" @click="refreshSnapshot">
+              立即采集
+            </el-button>
+          </div>
+        </div>
+      </template>
+
+      <ResourceGauges :snapshot="latest" />
+
+      <el-divider style="margin: 6px 0 14px" />
+
+      <div class="row" style="margin-bottom: 4px">
+        <span class="chart-title">性能趋势（最近 {{ historyRows.length }} 个采样点）</span>
+        <el-button size="small" text type="primary" @click="loadHistory">刷新曲线</el-button>
+      </div>
+      <el-empty
+        v-if="!historyRows.length"
+        description="暂无历史数据，点击「立即采集」开始积累"
+        :image-size="70"
+      />
+      <MetricsLineChart v-else :entries="historyRows" height="300px" />
+    </el-card>
+
+    <!-- 统计卡片 -->
     <el-row :gutter="16">
       <el-col v-for="card in summaryCards" :key="card.label" :span="6">
         <el-card class="page-card stat-card" shadow="hover">
@@ -16,13 +60,16 @@
       </el-col>
     </el-row>
 
+    <!-- 次要信息 -->
     <el-row :gutter="16">
       <el-col :span="14">
-        <el-card class="page-card" header="平台健康检查">
+        <el-card class="page-card">
           <template #header>
             <div class="row">
               <span>平台健康检查</span>
-              <el-tag :type="health.overall === 'ok' ? 'success' : 'warning'">{{ health.overall || '-' }}</el-tag>
+              <el-tag :type="health.overall === 'ok' ? 'success' : 'warning'" size="small">
+                {{ health.overall || '-' }}
+              </el-tag>
             </div>
           </template>
           <el-table :data="health.checks ?? []" size="small">
@@ -39,7 +86,7 @@
             </el-table-column>
             <el-table-column prop="detail" label="详情" min-width="220" show-overflow-tooltip />
           </el-table>
-          <div class="muted">检查时间：{{ health.checked_at || '-' }}</div>
+          <div class="muted">检查时间：{{ fmtTime(health.checked_at) }}</div>
         </el-card>
 
         <el-card class="page-card" header="运行环境上下文">
@@ -52,21 +99,6 @@
       </el-col>
 
       <el-col :span="10">
-        <el-card class="page-card">
-          <template #header>
-            <div class="row">
-              <span>实时资源占用</span>
-              <el-button size="small" text type="primary" @click="refreshSnapshot">立即采集</el-button>
-            </div>
-          </template>
-          <ResourceGauges :snapshot="latest" />
-          <el-collapse style="margin-top: 8px">
-            <el-collapse-item title="原始快照 JSON" name="raw">
-              <pre class="output">{{ pretty(latest) }}</pre>
-            </el-collapse-item>
-          </el-collapse>
-        </el-card>
-
         <el-card class="page-card" header="活跃告警">
           <el-empty v-if="!alerts.length" description="暂无告警" :image-size="60" />
           <el-table v-else :data="alerts" size="small">
@@ -80,22 +112,36 @@
             <el-table-column prop="message" label="信息" min-width="160" show-overflow-tooltip />
           </el-table>
         </el-card>
+
+        <el-card class="page-card" shadow="never">
+          <template #header><span>原始快照</span></template>
+          <el-collapse>
+            <el-collapse-item title="查看快照 JSON" name="raw">
+              <pre class="output">{{ pretty(latest) }}</pre>
+            </el-collapse-item>
+          </el-collapse>
+        </el-card>
       </el-col>
     </el-row>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import api from '@/api'
-import ops from '@/api/ops'
 import ResourceGauges from '@/components/ResourceGauges.vue'
+import MetricsLineChart from '@/components/MetricsLineChart.vue'
 
 const summary = ref<Record<string, unknown>>({})
 const health = ref<Record<string, any>>({})
 const runtime = ref<Record<string, unknown>>({})
 const latest = ref<Record<string, unknown> | null>(null)
 const alerts = ref<Record<string, any>[]>([])
+const historyRows = ref<Record<string, any>[]>([])
+const capturing = ref(false)
+const autoRefresh = ref(true)
+const refreshInterval = ref(10)
+let timer: number | undefined
 
 const summaryCards = computed(() => [
   { label: '用户数', value: summary.value.users_total, icon: 'User', color: '#2f6bff', bg: 'rgba(47,107,255,.12)' },
@@ -109,6 +155,11 @@ const summaryCards = computed(() => [
 
 function pretty(v: unknown) {
   return JSON.stringify(v, null, 2)
+}
+
+function fmtTime(v: unknown) {
+  const s = String(v ?? '')
+  return s ? s.replace('T', ' ').slice(0, 19) : '-'
 }
 
 function alertTagType(status: string) {
@@ -129,15 +180,40 @@ async function refreshAll() {
   runtime.value = r
 }
 
-async function refreshSnapshot() {
+async function refreshSnapshot(silent = false) {
+  capturing.value = true
   try {
     const res = (await api.monitor.snapshot()) as Record<string, any>
     latest.value = (res?.snapshot ?? res) as Record<string, any>
     alerts.value = ((await api.monitor.alerts()) as unknown[]) as Record<string, any>[]
+    await loadHistory().catch(() => undefined)
   } catch {
     /* ignore */
+  } finally {
+    capturing.value = false
   }
 }
+
+async function loadHistory() {
+  historyRows.value = await api.monitor.history({ limit: 100 })
+}
+
+function startTimer() {
+  stopTimer()
+  timer = window.setInterval(() => refreshSnapshot(true), refreshInterval.value * 1000)
+}
+
+function stopTimer() {
+  if (timer !== undefined) {
+    window.clearInterval(timer)
+    timer = undefined
+  }
+}
+
+watch([autoRefresh, refreshInterval], ([on]) => {
+  if (on) startTimer()
+  else stopTimer()
+})
 
 onMounted(async () => {
   await refreshAll()
@@ -145,10 +221,15 @@ onMounted(async () => {
     latest.value = await api.monitor.latest()
     if (!latest.value || !Object.keys(latest.value).length) latest.value = null
     alerts.value = ((await api.monitor.alerts()) as unknown[]) as Record<string, any>[]
+    await loadHistory()
   } catch {
     /* ignore */
   }
+  if (!latest.value) await refreshSnapshot(true)
+  if (autoRefresh.value) startTimer()
 })
+
+onBeforeUnmount(stopTimer)
 </script>
 
 <style scoped>
@@ -161,6 +242,18 @@ onMounted(async () => {
   color: #909399;
   font-size: 12px;
   margin-top: 8px;
+}
+.hero-card :deep(.el-card__header) {
+  padding: 12px 18px;
+}
+.hero-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #606266;
 }
 .stat-inner {
   display: flex;
