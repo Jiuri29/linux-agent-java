@@ -2,8 +2,16 @@
   <div>
     <el-row :gutter="16">
       <el-col v-for="card in summaryCards" :key="card.label" :span="6">
-        <el-card class="page-card" shadow="hover">
-          <el-statistic :title="card.label" :value="card.value ?? 0" />
+        <el-card class="page-card stat-card" shadow="hover">
+          <div class="stat-inner">
+            <div class="stat-icon" :style="{ background: card.bg, color: card.color }">
+              <el-icon :size="20"><component :is="card.icon" /></el-icon>
+            </div>
+            <div class="stat-meta">
+              <div class="stat-num">{{ card.value ?? 0 }}</div>
+              <div class="stat-label">{{ card.label }}</div>
+            </div>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -90,13 +98,13 @@ const latest = ref<Record<string, unknown> | null>(null)
 const alerts = ref<Record<string, any>[]>([])
 
 const summaryCards = computed(() => [
-  { label: '用户数', value: summary.value.users_total },
-  { label: '资产数', value: summary.value.assets_total },
-  { label: '活跃告警', value: summary.value.active_alerts },
-  { label: '在线会话', value: summary.value.sessions_active },
-  { label: 'MCP 工具', value: summary.value.mcp_tools_total },
-  { label: '审计事件', value: summary.value.audit_events_total },
-  { label: '服务数', value: summary.value.services_total },
+  { label: '用户数', value: summary.value.users_total, icon: 'User', color: '#2f6bff', bg: 'rgba(47,107,255,.12)' },
+  { label: '资产数', value: summary.value.assets_total, icon: 'Grid', color: '#00b42a', bg: 'rgba(0,180,42,.12)' },
+  { label: '活跃告警', value: summary.value.active_alerts, icon: 'WarningFilled', color: '#f56c6c', bg: 'rgba(245,108,108,.12)' },
+  { label: '在线会话', value: summary.value.sessions_active, icon: 'Link', color: '#7b3ff2', bg: 'rgba(123,63,242,.12)' },
+  { label: 'MCP 工具', value: summary.value.mcp_tools_total, icon: 'Box', color: '#00b4d8', bg: 'rgba(0,180,216,.12)' },
+  { label: '审计事件', value: summary.value.audit_events_total, icon: 'Document', color: '#e68619', bg: 'rgba(230,134,25,.12)' },
+  { label: '服务数', value: summary.value.services_total, icon: 'Setting', color: '#5b8cff', bg: 'rgba(91,140,255,.12)' },
 ])
 
 function pretty(v: unknown) {
@@ -153,5 +161,29 @@ onMounted(async () => {
   color: #909399;
   font-size: 12px;
   margin-top: 8px;
+}
+.stat-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.stat-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stat-num {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: 12px;
+  color: #909399;
 }
 </style>
