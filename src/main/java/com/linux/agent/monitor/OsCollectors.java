@@ -79,7 +79,7 @@ public class OsCollectors {
 
     private Double cpuUsagePercent(String procStat) {
         if (procStat == null) {
-            return null;
+            return systemCpuLoadPercent();
         }
         try {
             String[] parts = procStat.split("\\s+");
@@ -97,6 +97,20 @@ public class OsCollectors {
             }
             double usedRatio = (double) ((total - prev[1]) - (idle - prev[0])) / (total - prev[1]);
             return Math.round(Math.max(0, Math.min(100, usedRatio * 100)) * 10) / 10.0;
+        } catch (Exception e) {
+            return systemCpuLoadPercent();
+        }
+    }
+
+    private Double systemCpuLoadPercent() {
+        try {
+            com.sun.management.OperatingSystemMXBean os =
+                    (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+            double load = os.getSystemCpuLoad();
+            if (load < 0) {
+                return null;
+            }
+            return Math.round(Math.min(100, Math.max(0, load * 100)) * 10) / 10.0;
         } catch (Exception e) {
             return null;
         }
@@ -163,7 +177,7 @@ public class OsCollectors {
         List<Map<String, Object>> disks = new ArrayList<>();
         String output = exec("df -kP");
         if (output == null) {
-            return disks;
+            return fallbackDisks();
         }
         for (String line : output.split("\n")) {
             String[] cols = line.trim().split("\\s+");
@@ -184,6 +198,27 @@ public class OsCollectors {
             } catch (NumberFormatException ignored) {
                 // skip malformed df line
             }
+        }
+        return disks;
+    }
+
+    private List<Map<String, Object>> fallbackDisks() {
+        List<Map<String, Object>> disks = new ArrayList<>();
+        for (java.io.File root : java.io.File.listRoots()) {
+            long total = root.getTotalSpace();
+            if (total <= 0) {
+                continue;
+            }
+            long usable = root.getUsableSpace();
+            long used = total - usable;
+            Map<String, Object> disk = new LinkedHashMap<>();
+            disk.put("filesystem", root.getPath());
+            disk.put("mounted_on", root.getPath());
+            disk.put("total_kb", total / 1024);
+            disk.put("used_kb", used / 1024);
+            disk.put("available_kb", usable / 1024);
+            disk.put("usage_percent", Math.round((double) used / total * 1000) / 10.0);
+            disks.add(disk);
         }
         return disks;
     }

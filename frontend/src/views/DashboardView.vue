@@ -44,15 +44,19 @@
       </el-col>
 
       <el-col :span="10">
-        <el-card class="page-card" header="最新监控快照">
+        <el-card class="page-card">
           <template #header>
             <div class="row">
-              <span>最新监控快照</span>
+              <span>实时资源占用</span>
               <el-button size="small" text type="primary" @click="refreshSnapshot">立即采集</el-button>
             </div>
           </template>
-          <el-empty v-if="!latest || !Object.keys(latest).length" description="暂无快照，点击采集" />
-          <pre v-else class="output">{{ pretty(latest) }}</pre>
+          <ResourceGauges :snapshot="latest" />
+          <el-collapse style="margin-top: 8px">
+            <el-collapse-item title="原始快照 JSON" name="raw">
+              <pre class="output">{{ pretty(latest) }}</pre>
+            </el-collapse-item>
+          </el-collapse>
         </el-card>
 
         <el-card class="page-card" header="活跃告警">
@@ -77,6 +81,7 @@
 import { computed, onMounted, ref } from 'vue'
 import api from '@/api'
 import ops from '@/api/ops'
+import ResourceGauges from '@/components/ResourceGauges.vue'
 
 const summary = ref<Record<string, unknown>>({})
 const health = ref<Record<string, any>>({})
@@ -118,7 +123,8 @@ async function refreshAll() {
 
 async function refreshSnapshot() {
   try {
-    latest.value = await api.monitor.snapshot()
+    const res = (await api.monitor.snapshot()) as Record<string, any>
+    latest.value = (res?.snapshot ?? res) as Record<string, any>
     alerts.value = ((await api.monitor.alerts()) as unknown[]) as Record<string, any>[]
   } catch {
     /* ignore */

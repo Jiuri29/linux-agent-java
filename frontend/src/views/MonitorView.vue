@@ -2,40 +2,70 @@
   <el-tabs v-model="tab" @tab-change="onTab">
     <el-tab-pane label="监控概览" name="overview">
       <div class="toolbar">
-        <el-button type="primary" :loading="capturing" @click="capture">采集快照</el-button>
-        <el-button @click="loadOverview">刷新</el-button>
+        <el-button type="primary" :loading="capturing" @click="capture">立即采集</el-button>
+        <span class="muted">自动刷新</span>
+        <el-switch v-model="autoRefresh" />
+        <el-select v-model="refreshInterval" style="width: 100px" :disabled="!autoRefresh">
+          <el-option :value="5" label="5 秒" />
+          <el-option :value="10" label="10 秒" />
+          <el-option :value="30" label="30 秒" />
+        </el-select>
+        <div class="spacer" />
+        <span class="muted">主机：{{ latest?.hostname || '-' }} · 采样时间：{{ fmtTime(latest?.timestamp) }}</span>
       </div>
+
+      <ResourceGauges :snapshot="latest" class="page-card" />
+
+      <el-card class="page-card" shadow="never">
+        <template #header>
+          <div class="row">
+            <span>性能趋势（最近 {{ historyRows.length }} 个采样点）</span>
+            <el-button size="small" text type="primary" @click="loadHistory">刷新曲线</el-button>
+          </div>
+        </template>
+        <el-empty v-if="!historyRows.length" description="暂无历史数据，点击「立即采集」开始积累" />
+        <MetricsLineChart v-else :entries="historyRows" height="340px" />
+      </el-card>
+
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-card class="page-card" header="最新评估结果" shadow="never">
-            <el-empty v-if="!latest || !Object.keys(latest).length" description="暂无数据" :image-size="60" />
-            <pre v-else class="output">{{ pretty(latest) }}</pre>
+          <el-card class="page-card" header="磁盘分区" shadow="never">
+            <el-empty v-if="!diskRows.length" description="暂无分区数据" :image-size="60" />
+            <el-table v-else :data="diskRows" size="small" border>
+              <el-table-column prop="mounted_on" label="挂载点" min-width="110" />
+              <el-table-column label="容量" min-width="140">
+                <template #default="{ row }">{{ fmtKb(row.used_kb) }} / {{ fmtKb(row.total_kb) }}</template>
+              </el-table-column>
+              <el-table-column label="使用率" min-width="170">
+                <template #default="{ row }">
+                  <el-progress
+                    :percentage="Number(row.usage_percent ?? 0)"
+                    :color="[
+                      { color: '#67c23a', percentage: 60 },
+                      { color: '#e6a23c', percentage: 85 },
+                      { color: '#f56c6c', percentage: 100 },
+                    ]"
+                  />
+                </template>
+              </el-table-column>
+            </el-table>
           </el-card>
         </el-col>
         <el-col :span="12">
-          <el-card class="page-card" header="OS 只读感知" shadow="never">
-            <el-empty v-if="!osSnap || !Object.keys(osSnap).length" description="暂无数据" :image-size="60" />
-            <pre v-else class="output">{{ pretty(osSnap) }}</pre>
+          <el-card class="page-card" shadow="never">
+            <template #header>
+              <div class="row">
+                <span>原始快照数据</span>
+                <el-radio-group v-model="rawView" size="small">
+                  <el-radio-button value="snapshot">评估结果</el-radio-button>
+                  <el-radio-button value="os">OS 感知</el-radio-button>
+                </el-radio-group>
+              </div>
+            </template>
+            <pre class="output">{{ pretty(rawView === 'snapshot' ? latest : osSnap) }}</pre>
           </el-card>
         </el-col>
       </el-row>
-
-      <el-card class="page-card" header="指标历史" shadow="never">
-        <div class="toolbar">
-          <el-input v-model="history.host" placeholder="主机（可选）" style="width: 180px" />
-          <el-input v-model="history.metric" placeholder="指标（可选）" style="width: 160px" />
-          <el-input-number v-model="history.limit" :min="10" :max="1000" :step="50" />
-          <el-button type="primary" @click="loadHistory">查询</el-button>
-        </div>
-        <el-table :data="historyRows" size="small" border max-height="360">
-          <el-table-column prop="ts" label="时间" min-width="170">
-            <template #default="{ row }">{{ row.ts || row.timestamp || row.created_at || '-' }}</template>
-          </el-table-column>
-          <el-table-column prop="host" label="主机" min-width="130" />
-          <el-table-column prop="metric" label="指标" min-width="120" />
-          <el-table-column prop="value" label="值" width="110" />
-        </el-table>
-      </el-card>
     </el-tab-pane>
 
     <el-tab-pane name="alerts">
@@ -136,17 +166,36 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+import ResourceGauges from '@/components/ResourceGauges.vue'
+import MetricsLineChart from '@/components/MetricsLineChart.vue'
 
 const tab = ref('overview')
 const capturing = ref(false)
 const latest = ref<Record<string, any> | null>(null)
 const osSnap = ref<Record<string, any> | null>(null)
+const rawView = ref<'snapshot' | 'os'>('snapshot')
+const autoRefresh = ref(true)
+const refreshInterval = ref(10)
+let timer: number | undefined
 
 const history = reactive({ host: '', metric: '', limit: 100 })
 const historyRows = ref<Record<string, any>[]>([])
+const diskRows = computed<any[]>(() => (Array.isArray(latest.value?.disks) ? latest.value!.disks : []))
+
+function fmtTime(v: unknown) {
+  const s = String(v ?? '')
+  return s ? s.replace('T', ' ').slice(0, 19) : '-'
+}
+
+function fmtKb(kb: unknown) {
+  const v = Number(kb)
+  if (!Number.isFinite(v) || v <= 0) return '-'
+  const gb = v / 1024 / 1024
+  return gb >= 1 ? gb.toFixed(1) + ' GB' : (v / 1024).toFixed(0) + ' MB'
+}
 
 const alertFilter = ref('')
 const alerts = ref<Record<string, any>[]>([])
@@ -183,11 +232,12 @@ async function loadOverview() {
   }
 }
 
-async function capture() {
+async function capture(silent = false) {
   capturing.value = true
   try {
-    latest.value = await api.monitor.snapshot()
-    ElMessage.success('快照采集完成')
+    const res = (await api.monitor.snapshot()) as Record<string, any>
+    latest.value = (res?.snapshot ?? res) as Record<string, any>
+    if (!silent) ElMessage.success('快照采集完成')
   } catch {
     /* 拦截器已提示 */
   } finally {
@@ -201,6 +251,26 @@ async function loadHistory() {
   if (history.metric) params.metric = history.metric
   historyRows.value = await api.monitor.history(params)
 }
+
+function startTimer() {
+  stopTimer()
+  timer = window.setInterval(async () => {
+    await capture(true)
+    await loadHistory().catch(() => undefined)
+  }, refreshInterval.value * 1000)
+}
+
+function stopTimer() {
+  if (timer !== undefined) {
+    window.clearInterval(timer)
+    timer = undefined
+  }
+}
+
+watch([autoRefresh, refreshInterval], ([on]) => {
+  if (on) startTimer()
+  else stopTimer()
+})
 async function loadAlerts() {
   alerts.value = await api.monitor.alerts(alertFilter.value || undefined)
   suppressions.value = await api.monitor.suppressions()
@@ -259,8 +329,12 @@ function onTab(name: string | number) {
   else if (name === 'rules') loadRules()
 }
 
-onMounted(() => {
-  loadOverview()
-  loadHistory()
+onMounted(async () => {
+  await loadOverview()
+  await loadHistory()
+  if (!latest.value) await capture(true)
+  if (autoRefresh.value) startTimer()
 })
+
+onBeforeUnmount(stopTimer)
 </script>
