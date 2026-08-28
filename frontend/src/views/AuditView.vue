@@ -6,8 +6,7 @@
         <el-input v-model="q.action" placeholder="动作" style="width: 140px" />
         <el-input v-model="q.event_type" placeholder="事件类型" style="width: 140px" />
         <el-input v-model="q.keyword" placeholder="关键字" style="width: 160px" />
-        <el-date-picker v-model="range" type="datetimerange" start-placeholder="开始" end-placeholder="结束"
-          value-format="YYYY-MM-DDTHH:mm:ss" />
+        <el-date-picker v-model="range" type="datetimerange" start-placeholder="开始" end-placeholder="结束" />
         <el-button type="primary" @click="doQuery">查询</el-button>
         <el-button @click="resetQ">重置</el-button>
         <div class="spacer" />
@@ -26,13 +25,13 @@
         <el-table-column prop="ts" label="时间" min-width="165">
           <template #default="{ row }">{{ fmtTs(row.ts || row.timestamp) }}</template>
         </el-table-column>
-        <el-table-column prop="user" label="用户" width="110" />
-        <el-table-column prop="event_type" label="事件类型" min-width="120" />
+        <el-table-column prop="actor" label="用户" width="110" />
+        <el-table-column prop="eventType" label="事件类型" min-width="120" />
         <el-table-column prop="action" label="动作" min-width="130" show-overflow-tooltip />
-        <el-table-column prop="risk" label="风险" width="90">
+        <el-table-column prop="result" label="结果" width="90">
           <template #default="{ row }">
-            <el-tag v-if="row.risk" :type="row.risk === 'high' ? 'danger' : row.risk === 'medium' ? 'warning' : 'success'"
-              size="small">{{ row.risk }}</el-tag>
+            <el-tag v-if="row.result" :type="row.result === 'success' ? 'success' : (row.result === 'failure' || row.result === 'blocked' ? 'danger' : 'warning')"
+              size="small">{{ row.result }}</el-tag>
             <span v-else>-</span>
           </template>
         </el-table-column>
@@ -73,6 +72,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ops from '@/api/ops'
 import { downloadFile } from '@/api/http'
+import { fmtTs as fmtTsShared } from '@/utils/time'
 
 const tab = ref('query')
 const events = ref<Record<string, any>[]>([])
@@ -80,7 +80,7 @@ const verifyResult = ref<Record<string, any> | null>(null)
 const forensics = ref<unknown>(null)
 const compliance = ref<unknown>(null)
 const complianceDays = ref(30)
-const range = ref<[string, string] | null>(null)
+const range = ref<[Date, Date] | null>(null)
 
 const q = reactive({
   user: '',
@@ -95,10 +95,7 @@ function pretty(v: unknown) {
 }
 
 function fmtTs(ts: unknown): string {
-  const s = String(ts ?? '')
-  const d = new Date(s)
-  if (!Number.isFinite(d.getTime())) return '-'
-  return d.toLocaleString('zh-CN', { hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return fmtTsShared(ts)
 }
 
 function fmtDetail(d: unknown): string {
@@ -118,8 +115,8 @@ function queryParams() {
     if (v) params[k] = v
   }
   if (range.value) {
-    params.from = range.value[0]
-    params.to = range.value[1]
+    params.from = new Date(range.value[0]).toISOString()
+    params.to = new Date(range.value[1]).toISOString()
   }
   return params
 }
@@ -143,7 +140,11 @@ async function exportJsonl() {
 }
 
 async function archive() {
-  await ElMessageBox.confirm('将 90 天前的审计事件归档？', '归档', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm('将 90 天前的审计事件归档？', '归档', { type: 'warning' })
+  } catch {
+    return
+  }
   const res = await ops.audit.archive(90)
   ElMessage.success(`归档完成：${JSON.stringify(res).slice(0, 60)}`)
 }

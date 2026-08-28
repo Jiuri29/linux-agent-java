@@ -59,7 +59,7 @@ public class UserService {
         return result;
     }
 
-    public UserAccount create(String username, String password, String displayName, String role) {
+    public synchronized UserAccount create(String username, String password, String displayName, String role) {
         if (username == null || !username.matches("^[a-zA-Z0-9_.-]{3,32}$")) {
             throw AppException.validation("username must match ^[a-zA-Z0-9_.-]{3,32}$");
         }
@@ -87,7 +87,7 @@ public class UserService {
         return account;
     }
 
-    public UserAccount update(String username, String displayName, List<String> newRoles) {
+    public synchronized UserAccount update(String username, String displayName, List<String> newRoles) {
         UserAccount user = requireMutableUser(username);
         List<UserAccount> all = users.loadAll();
         if (displayName != null && !displayName.isBlank()) {
@@ -107,7 +107,7 @@ public class UserService {
         return user;
     }
 
-    public UserAccount setStatus(String username, String status) {
+    public synchronized UserAccount setStatus(String username, String status) {
         UserAccount user = requireMutableUser(username);
         List<UserAccount> all = users.loadAll();
         switch (status) {
@@ -132,7 +132,7 @@ public class UserService {
         return user;
     }
 
-    public void resetPassword(String username, String newPassword) {
+    public synchronized void resetPassword(String username, String newPassword) {
         UserAccount user = requireMutableUser(username);
         validatePassword(newPassword);
         user.setPasswordHash(hasher.hash(newPassword));
@@ -170,7 +170,7 @@ public class UserService {
         return result;
     }
 
-    public RoleDefinition upsertRole(String name, List<String> permissions) {
+    public synchronized RoleDefinition upsertRole(String name, List<String> permissions) {
         if (name == null || !name.matches("^[a-zA-Z0-9_-]{2,32}$")) {
             throw AppException.validation("role name must match ^[a-zA-Z0-9_-]{2,32}$");
         }
@@ -200,7 +200,7 @@ public class UserService {
         return definition;
     }
 
-    public void deleteRole(String name) {
+    public synchronized void deleteRole(String name) {
         if (RbacCatalog.isBuiltinRole(name)) {
             throw AppException.validation("builtin role cannot be deleted");
         }

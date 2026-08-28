@@ -7,12 +7,17 @@ import java.util.Map;
 
 public final class TextDiff {
 
+    private static final long MAX_CELLS = 4_000_000L;
+
     private TextDiff() {
     }
 
     public static List<Map<String, Object>> diffLines(String[] from, String[] to) {
         int n = from.length;
         int m = to.length;
+        if ((long) n * (long) m > MAX_CELLS) {
+            throw new IllegalArgumentException("diff inputs too large");
+        }
         int[][] dp = new int[n + 1][m + 1];
         for (int i = n - 1; i >= 0; i--) {
             for (int j = m - 1; j >= 0; j--) {

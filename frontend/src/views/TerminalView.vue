@@ -32,7 +32,9 @@
           </el-table-column>
           <el-table-column prop="status" label="状态" width="90">
             <template #default="{ row }">
-              <el-tag :type="row.status === 'ok' ? 'success' : 'danger'" size="small">{{ row.status }}</el-tag>
+              <el-tag :type="row.allowed ? (row.exit_code === 0 ? 'success' : 'warning') : 'danger'" size="small">
+                {{ row.allowed ? (row.exit_code === 0 ? 'ok' : 'exit ' + row.exit_code) : 'blocked' }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="90" fixed="right">
@@ -90,6 +92,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+import { fmtTs } from '@/utils/time'
 
 const cmd = ref('')
 const running = ref(false)
@@ -100,13 +103,6 @@ const selectedTemplate = ref('')
 
 const tplDlg = reactive({ visible: false, name: '', template: '' })
 const paramDlg = reactive({ visible: false, paramsText: '{}', templateId: '' })
-
-function fmtTs(ts: unknown): string {
-  const s = String(ts ?? '')
-  const d = new Date(s)
-  if (!Number.isFinite(d.getTime())) return '-'
-  return d.toLocaleString('zh-CN', { hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
 
 async function loadTemplates() {
   templates.value = await api.terminal.templates()
@@ -175,6 +171,7 @@ async function doRender() {
     paramDlg.visible = false
   } catch (e) {
     if (e instanceof SyntaxError) ElMessage.error('JSON 参数格式错误')
+    else throw e
   }
 }
 
@@ -188,7 +185,11 @@ function pretty(v: unknown) {
 }
 
 onMounted(() => {
-  loadTemplates()
-  loadHistory()
+  loadTemplates().catch(() => {
+    /* 拦截器已提示 */
+  })
+  loadHistory().catch(() => {
+    /* 拦截器已提示 */
+  })
 })
 </script>

@@ -2,7 +2,7 @@
   <el-tabs v-model="tab" @tab-change="onTab">
     <el-tab-pane label="监控概览" name="overview">
       <div class="toolbar">
-        <el-button type="primary" :loading="capturing" @click="capture">立即采集</el-button>
+        <el-button type="primary" :loading="capturing" @click="capture()">立即采集</el-button>
         <span class="muted">自动刷新</span>
         <el-switch v-model="autoRefresh" />
         <el-select v-model="refreshInterval" style="width: 100px" :disabled="!autoRefresh">
@@ -132,7 +132,7 @@
               <el-table-column prop="name" label="名称" min-width="140" />
               <el-table-column prop="metric" label="指标" min-width="110" />
               <el-table-column label="阈值条件" min-width="150">
-                <template #default="{ row }">{{ row.op }} {{ row.threshold }}</template>
+                <template #default="{ row }">{{ row.operator }} {{ row.threshold }}</template>
               </el-table-column>
               <el-table-column prop="severity" label="级别" width="90">
                 <template #default="{ row }">
@@ -171,6 +171,7 @@ import { ElMessage } from 'element-plus'
 import api from '@/api'
 import ResourceGauges from '@/components/ResourceGauges.vue'
 import MetricsLineChart from '@/components/MetricsLineChart.vue'
+import { fmtTs } from '@/utils/time'
 
 const tab = ref('overview')
 const capturing = ref(false)
@@ -187,7 +188,7 @@ const diskRows = computed<any[]>(() => (Array.isArray(latest.value?.disks) ? lat
 
 function fmtTime(v: unknown) {
   const s = String(v ?? '')
-  return s ? s.replace('T', ' ').slice(0, 19) : '-'
+  return s ? fmtTs(s) : '-'
 }
 
 function fmtKb(kb: unknown) {
@@ -233,7 +234,7 @@ async function loadOverview() {
 }
 
 async function capture(silent = false) {
-  capturing.value = true
+  if (!silent) capturing.value = true
   try {
     const res = (await api.monitor.snapshot()) as Record<string, any>
     latest.value = (res?.snapshot ?? res) as Record<string, any>
@@ -252,11 +253,20 @@ async function loadHistory() {
   historyRows.value = await api.monitor.history(params)
 }
 
+let polling = false
 function startTimer() {
   stopTimer()
   timer = window.setInterval(async () => {
-    await capture(true)
-    await loadHistory().catch(() => undefined)
+    if (polling) return
+    polling = true
+    try {
+      await capture(true)
+      await loadHistory()
+    } catch {
+      /* ignore polling errors */
+    } finally {
+      polling = false
+    }
   }, refreshInterval.value * 1000)
 }
 
@@ -309,9 +319,16 @@ async function saveRules() {
 }
 
 async function toggleRule(row: Record<string, any>, enabled: boolean) {
+  const previous = row.enabled
   row.enabled = enabled
   rulesText.value = JSON.stringify(rules.value, null, 2)
-  await saveRules()
+  try {
+    await api.monitor.saveAlertRules({ rules: JSON.parse(rulesText.value) })
+    ElMessage.success('规则已保存')
+  } catch {
+    row.enabled = previous
+    rulesText.value = JSON.stringify(rules.value, null, 2)
+  }
 }
 
 async function simulate() {
@@ -331,7 +348,7 @@ function onTab(name: string | number) {
 
 onMounted(async () => {
   await loadOverview()
-  await loadHistory()
+  await loadHistory().catch(() => undefined)
   if (!latest.value) await capture(true)
   if (autoRefresh.value) startTimer()
 })

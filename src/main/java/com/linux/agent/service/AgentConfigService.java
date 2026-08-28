@@ -23,10 +23,14 @@ public class AgentConfigService {
 
     private final AgentConfigRepository repository;
     private final AuditService audit;
+    private final HttpClient httpClient;
 
     public AgentConfigService(AgentConfigRepository repository, AuditService audit) {
         this.repository = repository;
         this.audit = audit;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
     }
 
     public synchronized Map<String, Object> get() {
@@ -101,14 +105,11 @@ public class AgentConfigService {
     public Map<String, Object> test() {
         AgentApiConfig config = requireEnabled();
         try {
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(5))
-                    .build();
             HttpRequest request = HttpRequest.newBuilder(URI.create(config.baseUrl))
                     .timeout(Duration.ofSeconds(Math.max(config.timeoutSeconds, 5)))
                     .GET()
                     .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             boolean reachable = response.statusCode() < 500;
             audit.append("config", operator(), "agent-api-test", "config:agent-api",
                     reachable ? "success" : "failure", Map.of("status", response.statusCode()));
@@ -135,7 +136,7 @@ public class AgentConfigService {
                     .header("X-Api-Key", config.apiKey == null ? "" : config.apiKey)
                     .POST(HttpRequest.BodyPublishers.ofString(payload))
                     .build();
-            HttpResponse<String> response = newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400) {
                 throw invalidConfig("agent api returned " + response.statusCode());
             }
@@ -151,10 +152,6 @@ public class AgentConfigService {
         } catch (Exception e) {
             throw invalidConfig("unreachable: " + e.getMessage());
         }
-    }
-
-    private HttpClient newHttpClient() {
-        return HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     }
 
     private static String quote(String value) {

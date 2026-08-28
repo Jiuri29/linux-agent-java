@@ -64,9 +64,8 @@ public class AuditService {
         for (int i = lines.size() - 1; i >= from; i--) {
             try {
                 events.add(mapper.readValue(lines.get(i), EVENT_TYPE));
-            } catch (Exception e) {
-                throw new com.linux.agent.web.AppException(
-                        com.linux.agent.web.ErrorCode.AUDIT_READ_FAILED, "failed to parse audit log");
+            } catch (Exception ignored) {
+                // skip torn or malformed line instead of failing the whole query
             }
         }
         return events;
@@ -169,45 +168,46 @@ public class AuditService {
         return sb.toString();
     }
 
-    public synchronized Map<String, Object> archive(int days) {
-        Instant threshold = Instant.now().minus(java.time.Duration.ofDays(days));
-        java.nio.file.Path path = java.nio.file.Path.of(logPath);
-        List<String> lines = store.readLines(path);
-        List<String> kept = new java.util.ArrayList<>();
-        List<String> archived = new java.util.ArrayList<>();
-        for (String line : lines) {
-            try {
-                AuditEvent event = mapper.readValue(line, EVENT_TYPE);
-                Instant ts = parseInstant(event.ts());
-                if (ts != null && ts.isBefore(threshold)) {
-                    archived.add(line);
-                } else {
+    public Map<String, Object> archive(int days) {
+        synchronized (lock) {
+            Instant threshold = Instant.now().minus(java.time.Duration.ofDays(days));
+            java.nio.file.Path path = java.nio.file.Path.of(logPath);
+            List<String> lines = store.readLines(path);
+            List<String> kept = new java.util.ArrayList<>();
+            List<String> archived = new java.util.ArrayList<>();
+            for (String line : lines) {
+                try {
+                    AuditEvent event = mapper.readValue(line, EVENT_TYPE);
+                    Instant ts = parseInstant(event.ts());
+                    if (ts != null && ts.isBefore(threshold)) {
+                        archived.add(line);
+                    } else {
+                        kept.add(line);
+                    }
+                } catch (Exception e) {
                     kept.add(line);
                 }
-            } catch (Exception e) {
-                kept.add(line);
             }
-        }
-        int archivedCount = archived.size();
-        if (archivedCount > 0) {
-            String stamp = java.time.LocalDateTime.now()
-                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            java.nio.file.Path archiveFile = path.getParent().resolve(
-                    "events-archive-" + stamp + ".jsonl");
-            try {
-                java.nio.file.Files.write(archiveFile,
-                        String.join(System.lineSeparator(), archived).getBytes(StandardCharsets.UTF_8));
-                java.nio.file.Files.write(path,
-                        String.join(System.lineSeparator(), kept).getBytes(StandardCharsets.UTF_8));
-            } catch (java.io.IOException e) {
-                throw new com.linux.agent.web.AppException(
-                        com.linux.agent.web.ErrorCode.AUDIT_READ_FAILED, "failed to write archive");
+            int archivedCount = archived.size();
+            if (archivedCount > 0) {
+                String stamp = java.time.LocalDateTime.now()
+                        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+                java.nio.file.Path archiveFile = path.getParent().resolve(
+                        "events-archive-" + stamp + ".jsonl");
+                try {
+                    java.nio.file.Files.write(archiveFile,
+                            String.join(System.lineSeparator(), archived).getBytes(StandardCharsets.UTF_8));
+                } catch (java.io.IOException e) {
+                    throw new com.linux.agent.web.AppException(
+                            com.linux.agent.web.ErrorCode.AUDIT_READ_FAILED, "failed to write archive");
+                }
+                store.writeLinesAtomic(path, kept);
+                lastHash = null;
+                lastSeq = 0;
+                ensureTail();
             }
-            lastHash = null;
-            lastSeq = 0;
-            ensureTail();
+            return Map.of("archived", archivedCount, "kept", kept.size(), "retention_days", days);
         }
-        return Map.of("archived", archivedCount, "kept", kept.size(), "retention_days", days);
     }
 
     public Map<String, Object> forensics() {

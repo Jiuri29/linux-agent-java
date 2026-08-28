@@ -70,6 +70,23 @@ public class JsonFileStore {
         }
     }
 
+    public void writeLinesAtomic(Path path, List<String> lines) {
+        try {
+            ensureParent(path);
+            Path tmp = Files.createTempFile(path.getParent(), path.getFileName().toString(), ".tmp");
+            byte[] payload = (String.join(System.lineSeparator(), lines) + System.lineSeparator())
+                    .getBytes(StandardCharsets.UTF_8);
+            Files.write(tmp, payload);
+            try {
+                Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("failed to write " + path, e);
+        }
+    }
+
     public List<String> readLines(Path path) {
         if (!Files.exists(path)) {
             return List.of();

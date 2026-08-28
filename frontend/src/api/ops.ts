@@ -19,7 +19,7 @@ export const ops = {
   chatops: {
     templates: (): Promise<Any[]> => http.get('/api/chatops/templates'),
     message: (sessionId: string | null, message: string): Promise<Any> =>
-      http.post('/api/chatops/message', { session_id: sessionId, message }),
+      http.post('/api/chatops/message', { session_id: sessionId, message }, { silentError: true }),
     confirm: (sessionId: string, actionId: string): Promise<Any> =>
       http.post('/api/chatops/confirm', { session_id: sessionId, action_id: actionId }),
     session: (id: string): Promise<Any> => http.get('/api/chatops/session', { params: { id } }),

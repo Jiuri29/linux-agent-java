@@ -87,8 +87,8 @@ public class OsCollectors {
             long nice = Long.parseLong(parts[2]);
             long system = Long.parseLong(parts[3]);
             long idle = Long.parseLong(parts[4]) + Long.parseLong(parts[5]);
-            long irq = Long.parseLong(parts[6]) + Long.parseLong(parts[7]) + (parts.length > 8 ? Long.parseLong(parts[8]) : 0);
-            long steal = parts.length > 9 ? Long.parseLong(parts[9]) : 0;
+            long irq = Long.parseLong(parts[6]) + Long.parseLong(parts[7]);
+            long steal = parts.length > 8 ? Long.parseLong(parts[8]) : 0;
             long total = user + nice + system + idle + irq + steal;
             long[] prev = prevCpuTicks;
             prevCpuTicks = new long[]{idle, total};
@@ -241,18 +241,11 @@ public class OsCollectors {
     }
 
     private static String exec(String command) {
-        try {
-            Process process = new ProcessBuilder(command.split("\\s+"))
-                    .redirectErrorStream(true)
-                    .start();
-            boolean finished = process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                return null;
-            }
-            return new String(process.getInputStream().readAllBytes());
-        } catch (Exception e) {
+        com.linux.agent.util.ProcessExec.Result result =
+                com.linux.agent.util.ProcessExec.run(new ProcessBuilder(command.split("\\s+")), 5, java.util.concurrent.TimeUnit.SECONDS);
+        if (result.timedOut() || result.failure() != null) {
             return null;
         }
+        return result.mergedOutput();
     }
 }

@@ -87,8 +87,9 @@ public class AssetService {
             }
             matched.add(toMap(asset));
         }
-        int fromIndex = Math.min((page - 1) * pageSize, matched.size());
-        int toIndex = Math.min(fromIndex + pageSize, matched.size());
+        long offset = (long) (page - 1) * (long) pageSize;
+        int fromIndex = (int) Math.min(offset, matched.size());
+        int toIndex = (int) Math.min(fromIndex + (long) pageSize, matched.size());
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("items", matched.subList(fromIndex, toIndex));
         result.put("total", matched.size());
@@ -101,7 +102,7 @@ public class AssetService {
         return toMap(requireAsset(id));
     }
 
-    public Map<String, Object> create(Map<String, Object> body) {
+    public synchronized Map<String, Object> create(Map<String, Object> body) {
         String hostname = str(body.get("hostname"));
         if (hostname == null || hostname.isBlank()) {
             throw AppException.validation("hostname is required");
@@ -125,14 +126,20 @@ public class AssetService {
         return toMap(asset);
     }
 
-    public Map<String, Object> update(Map<String, Object> body) {
+    public synchronized Map<String, Object> update(Map<String, Object> body) {
         String id = str(body.containsKey("id") ? body.get("id") : body.get("asset_id"));
-        Asset asset = requireAsset(id);
+        if (id == null || id.isBlank()) {
+            throw AppException.validation("id is required");
+        }
         AssetRepository.AssetDocument doc = repository.load();
+        Asset asset = doc.assets.stream()
+                .filter(a -> a.id.equals(id) || a.hostname.equals(id))
+                .findFirst()
+                .orElseThrow(() -> AppException.notFound("asset_not_found"));
         String newIp = str(body.get("ip"));
         if (newIp != null && !newIp.equals(asset.ip)) {
             validateIp(newIp);
-            if (doc.assets.stream().anyMatch(a -> newIp.equals(a.ip))) {
+            if (doc.assets.stream().anyMatch(a -> newIp.equals(a.ip) && !a.id.equals(asset.id))) {
                 throw AppException.validation("duplicate asset ip: " + newIp);
             }
         }
@@ -143,7 +150,7 @@ public class AssetService {
         return toMap(asset);
     }
 
-    public void delete(String id) {
+    public synchronized void delete(String id) {
         AssetRepository.AssetDocument doc = repository.load();
         Asset asset = doc.assets.stream()
                 .filter(a -> a.id.equals(id))
@@ -160,7 +167,7 @@ public class AssetService {
         return List.copyOf(repository.load().groups);
     }
 
-    public Map<String, Object> addGroup(String name) {
+    public synchronized Map<String, Object> addGroup(String name) {
         requireName(name);
         AssetRepository.AssetDocument doc = repository.load();
         if (!doc.groups.contains(name)) {
@@ -170,7 +177,7 @@ public class AssetService {
         return Map.of("status", "ok", "name", name);
     }
 
-    public void deleteGroup(String name) {
+    public synchronized void deleteGroup(String name) {
         AssetRepository.AssetDocument doc = repository.load();
         doc.groups.remove(name);
         doc.assets.forEach(a -> a.groups.remove(name));
@@ -182,7 +189,7 @@ public class AssetService {
         return List.copyOf(repository.load().tags);
     }
 
-    public Map<String, Object> addTag(String name) {
+    public synchronized Map<String, Object> addTag(String name) {
         requireName(name);
         AssetRepository.AssetDocument doc = repository.load();
         if (!doc.tags.contains(name)) {
@@ -192,7 +199,7 @@ public class AssetService {
         return Map.of("status", "ok", "name", name);
     }
 
-    public void deleteTag(String name) {
+    public synchronized void deleteTag(String name) {
         AssetRepository.AssetDocument doc = repository.load();
         doc.tags.remove(name);
         doc.assets.forEach(a -> a.tags.remove(name));
@@ -204,7 +211,7 @@ public class AssetService {
         return List.copyOf(repository.load().applications);
     }
 
-    public Map<String, Object> addApplication(String name) {
+    public synchronized Map<String, Object> addApplication(String name) {
         requireName(name);
         AssetRepository.AssetDocument doc = repository.load();
         if (!doc.applications.contains(name)) {
@@ -214,7 +221,7 @@ public class AssetService {
         return Map.of("status", "ok", "name", name);
     }
 
-    public Map<String, Object> addPorts(Map<String, Object> body) {
+    public synchronized Map<String, Object> addPorts(Map<String, Object> body) {
         Asset asset = requireAsset(str(body.getOrDefault("asset_id", body.get("id"))));
         Object rawPorts = body.get("ports");
         if (!(rawPorts instanceof List<?> portList) || portList.isEmpty()) {
@@ -240,7 +247,7 @@ public class AssetService {
         return toMap(target);
     }
 
-    public Map<String, Object> addDependency(Map<String, Object> body) {
+    public synchronized Map<String, Object> addDependency(Map<String, Object> body) {
         String sourceId = str(body.get("source_asset_id"));
         String targetId = str(body.get("target_asset_id"));
         if (sourceId == null || targetId == null) {
@@ -269,7 +276,7 @@ public class AssetService {
                 .toList();
     }
 
-    public Map<String, Object> sync(String source) {
+    public synchronized Map<String, Object> sync(String source) {
         switch (source == null ? "" : source.toLowerCase(Locale.ROOT)) {
             case "manual" -> {
                 return Map.of("status", "ok", "synced", 0);

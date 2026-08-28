@@ -45,7 +45,7 @@ public class ServiceCenterService {
         return result;
     }
 
-    public Map<String, Object> upsert(Map<String, Object> body) {
+    public synchronized Map<String, Object> upsert(Map<String, Object> body) {
         String id = str(body.get("id"));
         ServiceCenterRepository.ServiceCenterDocument doc = repository.load();
         ServiceEntry entry;
@@ -76,7 +76,7 @@ public class ServiceCenterService {
         return toMap(findService(repository.load(), requireId(id)));
     }
 
-    public Map<String, Object> lifecycle(Map<String, Object> body) {
+    public synchronized Map<String, Object> lifecycle(Map<String, Object> body) {
         String serviceId = requireId(str(body.get("service_id")));
         String action = str(body.getOrDefault("action", ""));
         List<String> command = switch (action) {
@@ -141,7 +141,7 @@ public class ServiceCenterService {
         return result;
     }
 
-    public ConfigVersion saveVersion(Map<String, Object> body) {
+    public synchronized ConfigVersion saveVersion(Map<String, Object> body) {
         String serviceId = requireId(str(body.get("service_id")));
         ServiceEntry service = findService(repository.load(), serviceId);
         Object rawContent = body.get("content");
@@ -185,7 +185,7 @@ public class ServiceCenterService {
         if ("disk".equals(toId)) {
             ConfigVersion from = versionDetail(fromId);
             fromContent = nullToEmpty(from.content());
-            toContent = readFile(Path.of(from.configPath()));
+            toContent = readFile(guardConfigPath(from.configPath()));
         } else {
             fromContent = nullToEmpty(versionDetail(fromId).content());
             toContent = nullToEmpty(versionDetail(toId).content());
@@ -217,7 +217,7 @@ public class ServiceCenterService {
         } else {
             baseline = versions.get(versions.size() - 1);
         }
-        String disk = readFile(Path.of(service.configPath));
+        String disk = readFile(guardConfigPath(service.configPath));
         boolean drifted = !nullToEmpty(baseline.content()).equals(nullToEmpty(disk));
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("service_id", serviceId);
@@ -231,7 +231,7 @@ public class ServiceCenterService {
         return result;
     }
 
-    public Map<String, Object> rollback(Map<String, Object> body) {
+    public synchronized Map<String, Object> rollback(Map<String, Object> body) {
         String serviceId = requireId(str(body.get("service_id")));
         String versionId = requireId(str(body.get("version_id")));
         ServiceEntry service = findService(repository.load(), serviceId);
@@ -242,7 +242,7 @@ public class ServiceCenterService {
         if (service.configPath == null || service.configPath.isBlank()) {
             throw AppException.validation("service has no config_path configured");
         }
-        writeFile(Path.of(service.configPath), nullToEmpty(target.content()));
+        writeFile(guardConfigPath(service.configPath), nullToEmpty(target.content()));
         ServiceCenterRepository.ServiceCenterDocument doc = repository.load();
         recordChange(doc, serviceId, "config_rollback", Map.of("version_id", versionId));
         repository.save(doc);
@@ -286,20 +286,15 @@ public class ServiceCenterService {
     }
 
     private static String exec(List<String> command) {
-        try {
-            Process process = new ProcessBuilder(command)
-                    .redirectErrorStream(true)
-                    .start();
-            boolean finished = process.waitFor(15, java.util.concurrent.TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                return "timeout";
-            }
-            return new String(process.getInputStream().readAllBytes(),
-                    java.nio.charset.StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            return "exec failed: " + e.getMessage();
+        com.linux.agent.util.ProcessExec.Result result =
+                com.linux.agent.util.ProcessExec.run(new ProcessBuilder(command), 15, java.util.concurrent.TimeUnit.SECONDS);
+        if (result.timedOut()) {
+            return "timeout";
         }
+        if (result.failure() != null) {
+            return "exec failed: " + result.failure().getMessage();
+        }
+        return result.mergedOutput();
     }
 
     private Path configPathOf(String serviceId) {
@@ -307,7 +302,13 @@ public class ServiceCenterService {
         if (service.configPath == null || service.configPath.isBlank()) {
             throw AppException.validation("service has no config_path configured");
         }
-        return Path.of(service.configPath);
+        return guardConfigPath(service.configPath);
+    }
+
+    private static Path guardConfigPath(String raw) {
+        Path path = Path.of(raw).normalize().toAbsolutePath();
+        FileService.ensureNotDenied(path);
+        return path;
     }
 
     private String readFile(Path path) {
@@ -315,7 +316,7 @@ public class ServiceCenterService {
             throw AppException.notFound("config file not found: " + path);
         }
         try {
-            return Files.readString(path);
+            return Files.readString(path, java.nio.charset.StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw AppException.validation("failed to read config file");
         }

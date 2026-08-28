@@ -35,6 +35,8 @@ public class AcceptanceService {
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
 
+    private static final java.util.regex.Pattern RUN_ID = java.util.regex.Pattern.compile("^run-\\d+$");
+
     private final AuthService authService;
     private final AssetRepository assetRepository;
     private final OsCollectors collectors;
@@ -142,7 +144,11 @@ public class AcceptanceService {
         if (!Files.exists(file)) {
             throw AppException.notFound("run_not_found");
         }
-        return store.read(file, MAP_TYPE, () -> null);
+        Map<String, Object> record = store.read(file, MAP_TYPE, () -> null);
+        if (record == null) {
+            throw AppException.notFound("run_not_found");
+        }
+        return record;
     }
 
     public String report(String runId) {
@@ -208,6 +214,9 @@ public class AcceptanceService {
     private static String requireId(String id) {
         if (id == null || id.isBlank()) {
             throw AppException.validation("id is required");
+        }
+        if (!RUN_ID.matcher(id).matches()) {
+            throw AppException.notFound("run_not_found");
         }
         return id;
     }

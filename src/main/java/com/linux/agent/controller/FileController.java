@@ -54,8 +54,12 @@ public class FileController {
 
     @PostMapping("/api/files/write")
     public Map<String, Object> write(@RequestBody Map<String, Object> body) {
+        Object path = body.get("path");
+        if (path == null || String.valueOf(path).isBlank()) {
+            throw com.linux.agent.web.AppException.validation("path is required");
+        }
         Object content = body.getOrDefault("content", "");
-        return fileService.write(String.valueOf(body.get("path")),
+        return fileService.write(String.valueOf(path),
                 String.valueOf(content).getBytes(StandardCharsets.UTF_8));
     }
 
@@ -67,7 +71,11 @@ public class FileController {
 
     @PostMapping("/api/files/delete")
     public Map<String, Object> delete(@RequestBody Map<String, Object> body) {
-        return fileService.delete(String.valueOf(body.get("path")));
+        Object path = body.get("path");
+        if (path == null || String.valueOf(path).isBlank()) {
+            throw com.linux.agent.web.AppException.validation("path is required");
+        }
+        return fileService.delete(String.valueOf(path));
     }
 
     @GetMapping("/api/files/backups")

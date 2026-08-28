@@ -39,7 +39,7 @@ public class AuthService {
         return !users.isEmpty();
     }
 
-    public UserAccount initAdmin(String username, String password, String displayName) {
+    public synchronized UserAccount initAdmin(String username, String password, String displayName) {
         if (initialized()) {
             throw AppException.validation("admin already initialized");
         }
@@ -57,7 +57,7 @@ public class AuthService {
         return account;
     }
 
-    public LoginResult login(String username, String password) {
+    public synchronized LoginResult login(String username, String password) {
         UserAccount user = users.findByUsername(username).orElse(null);
         Instant now = Instant.now();
 

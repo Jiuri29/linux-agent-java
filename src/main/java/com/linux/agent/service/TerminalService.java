@@ -23,6 +23,7 @@ public class TerminalService {
 
     private static final int TIMEOUT_SECONDS = 20;
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{\\{\\s*([a-zA-Z0-9_.-]+)\\s*}}");
+    private static final Pattern RUN_ID = Pattern.compile("^run-[0-9a-fA-F]{8}$");
 
     private final TerminalRepository repository;
     private final TerminalPolicy policy;
@@ -41,7 +42,7 @@ public class TerminalService {
         return List.copyOf(repository.loadTemplates());
     }
 
-    public TerminalTemplate saveTemplate(Map<String, Object> body) {
+    public synchronized TerminalTemplate saveTemplate(Map<String, Object> body) {
         String name = str(body.get("name"));
         String commandTemplate = str(body.get("command_template"));
         if (name == null || name.isBlank()) {
@@ -92,7 +93,7 @@ public class TerminalService {
         }
 
         long start = System.currentTimeMillis();
-        Execution execution = execute(command.split("\\s+"));
+        Execution execution = execute(tokenize(command));
         long duration = System.currentTimeMillis() - start;
 
         recordHistory(id, operator, command, execution.exitCode(), duration, true, null,
@@ -114,11 +115,15 @@ public class TerminalService {
     }
 
     public Map<String, Object> replay(String id) {
-        String output = repository.readOutput(requireNonBlank(id));
+        String safeId = requireNonBlank(id);
+        if (!RUN_ID.matcher(safeId).matches()) {
+            throw AppException.notFound("run_not_found");
+        }
+        String output = repository.readOutput(safeId);
         if (output == null) {
             throw AppException.notFound("run_not_found");
         }
-        return Map.of("id", id, "output", output);
+        return Map.of("id", safeId, "output", output);
     }
 
     private String resolveCommand(Map<String, Object> body) {
@@ -165,23 +170,64 @@ public class TerminalService {
     }
 
     private Execution execute(String[] tokens) {
-        try {
-            Process process = new ProcessBuilder(tokens)
-                    .redirectErrorStream(false)
-                    .start();
-            boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                return new Execution(-1, "", "timeout after " + TIMEOUT_SECONDS + "s");
-            }
-            String stdout = new String(process.getInputStream().readAllBytes(),
-                    java.nio.charset.StandardCharsets.UTF_8);
-            String stderr = new String(process.getErrorStream().readAllBytes(),
-                    java.nio.charset.StandardCharsets.UTF_8);
-            return new Execution(process.exitValue(), stdout, stderr);
-        } catch (Exception e) {
-            return new Execution(-1, "", "exec failed: " + e.getMessage());
+        com.linux.agent.util.ProcessExec.Result result = com.linux.agent.util.ProcessExec.run(
+                new ProcessBuilder(tokens), TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (result.timedOut()) {
+            return new Execution(-1, "", "timeout after " + TIMEOUT_SECONDS + "s");
         }
+        if (result.failure() != null) {
+            return new Execution(-1, "", "exec failed: " + result.failure().getMessage());
+        }
+        return new Execution(result.exitCode(), result.stdout(), result.stderr());
+    }
+
+    static String[] tokenize(String command) {
+        List<String> out = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inSingle = false;
+        boolean inDouble = false;
+        boolean hasToken = false;
+        char[] chars = command.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            if (inSingle) {
+                if (c == '\'') {
+                    inSingle = false;
+                } else {
+                    current.append(c);
+                }
+            } else if (inDouble) {
+                if (c == '"') {
+                    inDouble = false;
+                } else if (c == '\\' && i + 1 < chars.length) {
+                    current.append(chars[++i]);
+                } else {
+                    current.append(c);
+                }
+            } else if (c == '\'') {
+                inSingle = true;
+                hasToken = true;
+            } else if (c == '"') {
+                inDouble = true;
+                hasToken = true;
+            } else if (c == '\\' && i + 1 < chars.length) {
+                current.append(chars[++i]);
+                hasToken = true;
+            } else if (Character.isWhitespace(c)) {
+                if (hasToken) {
+                    out.add(current.toString());
+                    current.setLength(0);
+                    hasToken = false;
+                }
+            } else {
+                current.append(c);
+                hasToken = true;
+            }
+        }
+        if (hasToken) {
+            out.add(current.toString());
+        }
+        return out.toArray(new String[0]);
     }
 
     private static String requireNonBlank(String value) {

@@ -102,8 +102,16 @@ async function send() {
     })
     if (sessionId.value) sessionInfo.value = await ops.chatops.session(sessionId.value)
   } catch (e) {
-    if (e && typeof e === 'object' && 'code' in e && (e as any).code === 'invalid_agent_api_config') {
-      ElMessage.warning('Agent API 尚未配置，请先到「Agent API」页启用外部模型配置')
+    const code = e && typeof e === 'object' && 'code' in e ? String((e as any).code) : ''
+    if (code === 'invalid_agent_api_config') {
+      messages.value.push({
+        role: 'agent',
+        text: 'Agent API 尚未配置或不可用，请先到「Agent API 配置」页完成设置后再试。',
+        ts: now(),
+      })
+    } else {
+      const detail = e && typeof e === 'object' && 'message' in e ? String((e as any).message) : '请求失败'
+      messages.value.push({ role: 'agent', text: `处理失败：${detail}`, ts: now() })
     }
   } finally {
     sending.value = false
@@ -132,7 +140,11 @@ async function cleanup() {
   ElMessage.success(`清理完成：${pretty(res).slice(0, 80)}`)
 }
 
-onMounted(loadTemplates)
+onMounted(() => {
+  loadTemplates().catch(() => {
+    /* 拦截器已提示 */
+  })
+})
 </script>
 
 <style scoped>

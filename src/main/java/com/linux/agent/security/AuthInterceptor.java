@@ -62,7 +62,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        Optional<String> required = permissionMapper.permissionFor(request.getMethod(), request.getRequestURI());
+        Optional<String> required = permissionMapper.permissionFor(request.getMethod(), normalizedPath(request.getRequestURI()));
         if (required.isPresent()) {
             Set<String> permissions = RbacCatalog.permissionsForRoles(session.roles());
             if (!RbacCatalog.hasPermission(permissions, required.get())) {
@@ -81,6 +81,13 @@ public class AuthInterceptor implements HandlerInterceptor {
             }
         }
         return false;
+    }
+
+    private String normalizedPath(String uri) {
+        if (uri.startsWith("/api/v1/")) {
+            return "/api/" + uri.substring("/api/v1/".length());
+        }
+        return uri;
     }
 
     private boolean isSafeMethod(String method) {

@@ -46,17 +46,21 @@
           <template #default="{ row }">{{ row.ts || row.created_at || '-' }}</template>
         </el-table-column>
         <el-table-column prop="intent" label="意图" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="command" label="命令" min-width="220" show-overflow-tooltip>
-          <template #default="{ row }"><span class="mono">{{ row.command }}</span></template>
-        </el-table-column>
-        <el-table-column prop="risk" label="风险" width="90">
+        <el-table-column label="命令" min-width="220" show-overflow-tooltip>
           <template #default="{ row }">
-            <el-tag :type="row.risk === 'high' ? 'danger' : row.risk === 'medium' ? 'warning' : 'success'" size="small">
-              {{ row.risk }}
+            <span class="mono">{{ (row.decisions ?? []).map((d: any) => d.command).join('; ') }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="overall" label="风险" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.overall === 'deny' ? 'danger' : row.overall === 'approve' ? 'warning' : 'success'" size="small">
+              {{ row.overall || '-' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="110" />
+        <el-table-column label="决策数" width="80">
+          <template #default="{ row }">{{ (row.decisions ?? []).length }}</template>
+        </el-table-column>
       </el-table>
     </el-tab-pane>
 

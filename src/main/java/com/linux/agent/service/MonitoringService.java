@@ -106,18 +106,40 @@ public class MonitoringService {
         return repository.loadRules();
     }
 
-    public Map<String, Object> saveRules(Map<String, Object> body) {
+    public synchronized Map<String, Object> saveRules(Map<String, Object> body) {
         List<AlertRule> rules = repository.loadRules();
         if (Boolean.TRUE.equals(body.get("reset"))) {
             repository.saveRules(new ArrayList<>());
             audit.append("monitor", "system", "alert-rules-reset", "rules", "success", Map.of());
             return Map.of("status", "ok", "reset", true);
         }
+        if (body.get("rules") instanceof List<?> rawList) {
+            List<AlertRule> parsed = new ArrayList<>();
+            for (Object item : rawList) {
+                AlertRule rule = mapper.convertValue(item, AlertRule.class);
+                validateRule(rule);
+                parsed.add(rule);
+            }
+            repository.saveRules(parsed);
+            audit.append("monitor", "system", "alert-rule-save", "rules", "success",
+                    Map.of("count", parsed.size()));
+            return Map.of("status", "ok", "saved", parsed.size());
+        }
         Object rawRule = body.get("rule");
         if (rawRule == null) {
             throw AppException.validation("rule is required");
         }
         AlertRule rule = mapper.convertValue(rawRule, AlertRule.class);
+        validateRule(rule);
+        rules.removeIf(r -> r.id.equals(rule.id));
+        rules.add(rule);
+        repository.saveRules(rules);
+        audit.append("monitor", "system", "alert-rule-save", "rule:" + rule.id, "success",
+                Map.of("metric", rule.metric, "operator", rule.operator, "threshold", rule.threshold));
+        return Map.of("status", "ok", "id", rule.id);
+    }
+
+    private void validateRule(AlertRule rule) {
         if (rule.metric == null || rule.metric.isBlank()) {
             throw AppException.validation("rule.metric is required");
         }
@@ -130,12 +152,6 @@ public class MonitoringService {
         if (rule.id == null || rule.id.isBlank()) {
             rule.id = "alr-" + tokens.shortId();
         }
-        rules.removeIf(r -> r.id.equals(rule.id));
-        rules.add(rule);
-        repository.saveRules(rules);
-        audit.append("monitor", "system", "alert-rule-save", "rule:" + rule.id, "success",
-                Map.of("metric", rule.metric, "operator", rule.operator, "threshold", rule.threshold));
-        return Map.of("status", "ok", "id", rule.id);
     }
 
     public List<Map<String, Object>> simulate(Map<String, Object> body) {

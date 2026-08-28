@@ -50,6 +50,8 @@ public class FileService {
     }
 
     private static final int PREVIEW_LIMIT_CHARS = 256 * 1024;
+    private static final long MAX_DIFF_CHARS = 1024 * 1024;
+    private static final int MAX_DIFF_LINES = 20000;
 
     private final AppProperties properties;
     private final JsonFileStore store;
@@ -105,10 +107,10 @@ public class FileService {
         Path path = resolveAllowed(rawPath);
         requireRegularFile(path);
         try {
-            String content = Files.readString(path, StandardCharsets.UTF_8);
-            if (content.length() > PREVIEW_LIMIT_CHARS) {
+            if (Files.size(path) > PREVIEW_LIMIT_CHARS) {
                 throw AppException.validation("file too large for preview, use download");
             }
+            String content = Files.readString(path, StandardCharsets.UTF_8);
             return Map.of("path", path.toString(), "size_bytes", Files.size(path), "content", content);
         } catch (IOException e) {
             throw AppException.validation("failed to read file");
@@ -178,8 +180,8 @@ public class FileService {
         Path path = resolveAllowed(rawPath);
         requireRegularFile(path);
         BackupRecord target = pickBackup(path, backupId);
-        String current = readFileQuietly(path);
-        String backupContent = readBackupBlob(target.file());
+        String current = limitForDiff(readCurrentForDiff(path), "current file");
+        String backupContent = limitForDiff(readBackupBlob(target.file()), "backup content");
         List<Map<String, Object>> lines =
                 TextDiff.diffLines(backupContent.split("\n", -1), current.split("\n", -1));
         long added = lines.stream().filter(l -> "add".equals(l.get("op"))).count();
@@ -247,7 +249,7 @@ public class FileService {
             return;
         }
         try {
-            String blobName = System.currentTimeMillis() + ".bak";
+            String blobName = System.currentTimeMillis() + "-" + tokens.shortId() + ".bak";
             Path blob = backupsDir().resolve(blobName);
             Files.copy(path, blob, StandardCopyOption.REPLACE_EXISTING);
             BackupRecord record = new BackupRecord(
@@ -279,9 +281,17 @@ public class FileService {
                 .orElseThrow(() -> AppException.notFound("backup_not_found"));
     }
 
+    private Path backupBlobPath(String fileName) {
+        Path blob = backupsDir().resolve(String.valueOf(fileName)).normalize();
+        if (!blob.getParent().equals(backupsDir())) {
+            throw AppException.validation("invalid backup file reference");
+        }
+        return blob;
+    }
+
     private String readBackupBlob(String fileName) {
         try {
-            return Files.readString(backupsDir().resolve(fileName), StandardCharsets.UTF_8);
+            return Files.readString(backupBlobPath(fileName), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw AppException.validation("failed to read backup");
         }
@@ -289,7 +299,7 @@ public class FileService {
 
     private byte[] readBackupBlobBytes(String fileName) {
         try {
-            return Files.readAllBytes(backupsDir().resolve(fileName));
+            return Files.readAllBytes(backupBlobPath(fileName));
         } catch (IOException e) {
             throw AppException.validation("failed to read backup");
         }
@@ -309,12 +319,22 @@ public class FileService {
         return backupsDir().resolve("index.jsonl");
     }
 
-    private static String readFileQuietly(Path path) {
+    private String readCurrentForDiff(Path path) {
         try {
             return Files.readString(path, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            return "";
+            throw AppException.validation("failed to read current file for diff");
         }
+    }
+
+    private static String limitForDiff(String content, String label) {
+        if (content.length() > MAX_DIFF_CHARS) {
+            throw AppException.validation(label + " too large to diff, limit is 1 MB per side");
+        }
+        if (content.split("\n", -1).length > MAX_DIFF_LINES) {
+            throw AppException.validation(label + " has too many lines to diff, limit is 20000 per side");
+        }
+        return content;
     }
 
     private static void requireRegularFile(Path path) {
@@ -331,6 +351,15 @@ public class FileService {
             throw AppException.validation("path is required");
         }
         Path candidate = Path.of(rawPath).normalize().toAbsolutePath();
+        checkBoundaries(candidate);
+        Path real = toRealPathQuietly(candidate);
+        if (!real.equals(candidate)) {
+            checkBoundaries(real);
+        }
+        return candidate;
+    }
+
+    private void checkBoundaries(Path candidate) {
         boolean allowed = false;
         for (Path root : roots()) {
             if (candidate.startsWith(root)) {
@@ -341,13 +370,25 @@ public class FileService {
         if (!allowed) {
             throw denied(candidate);
         }
+        ensureNotDenied(candidate);
+    }
+
+    private static Path toRealPathQuietly(Path path) {
+        try {
+            return path.toRealPath();
+        } catch (IOException e) {
+            return path;
+        }
+    }
+
+    public static void ensureNotDenied(Path candidate) {
         for (String deniedRoot : DENIED_ROOTS) {
-            Path denied = Path.of(deniedRoot).normalize();
+            Path denied = Path.of(deniedRoot).normalize().toAbsolutePath();
             if (candidate.startsWith(denied)) {
-                throw denied(candidate);
+                throw new AppException(ErrorCode.PERMISSION_DENIED, "path is denied: " + candidate,
+                        Map.of("error", "path_not_allowed"));
             }
         }
-        return candidate;
     }
 
     private static AppException denied(Path candidate) {

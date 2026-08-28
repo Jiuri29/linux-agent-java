@@ -34,7 +34,7 @@ router.beforeEach(async (to) => {
   const auth = useAuthStore()
   if (to.meta.public) return true
   const initialized = await auth.bootstrap()
-  if (!initialized) {
+  if (initialized === false) {
     return { name: 'login', query: { setup: '1' } }
   }
   if (!auth.isAuthenticated) {

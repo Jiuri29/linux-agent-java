@@ -114,16 +114,19 @@ function formatSize(n: unknown) {
   return `${(v / 1024 / 1024 / 1024).toFixed(1)} GB`
 }
 
+let browseSeq = 0
 async function browse() {
+  const seq = ++browseSeq
   loading.value = true
   try {
     const res = await api.files.list(path.value || undefined)
+    if (seq !== browseSeq) return
     const list = Array.isArray(res) ? res : res.entries ?? res.items ?? []
     entries.value = list as Record<string, any>[]
     const base = path.value || roots.value[0] || '/'
     targetPath.value = joinPath(base, 'upload.bin')
   } finally {
-    loading.value = false
+    if (seq === browseSeq) loading.value = false
   }
 }
 
@@ -133,9 +136,11 @@ function joinPath(dir: string, name: string) {
 }
 
 function goUp() {
-  const parts = (path.value || roots.value[0] || '').replace(/[\\/]+$/, '').split(/[\\/]/)
+  const raw = path.value || roots.value[0] || ''
+  const sep = raw.includes('\\') && !raw.includes('/') ? '\\' : '/'
+  const parts = raw.replace(/[\\/]+$/, '').split(/[\\/]/)
   parts.pop()
-  path.value = parts.join('/') || roots.value[0] || ''
+  path.value = parts.length ? parts.join(sep) : roots.value[0] || ''
   browse()
 }
 
@@ -165,7 +170,11 @@ function download(row: Record<string, any>) {
 }
 async function removeEntry(row: Record<string, any>) {
   const p = row.path ?? joinPath(path.value, row.name)
-  await ElMessageBox.confirm(`确认删除 ${p}？`, '删除', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认删除 ${p}？`, '删除', { type: 'warning' })
+  } catch {
+    return
+  }
   await api.files.remove(p)
   ElMessage.success('已删除')
   browse()
@@ -211,7 +220,11 @@ async function diffBackup(row: Record<string, any>) {
 }
 
 async function restoreBackup(row: Record<string, any>) {
-  await ElMessageBox.confirm('确认从该备份恢复？', '恢复', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm('确认从该备份恢复？', '恢复', { type: 'warning' })
+  } catch {
+    return
+  }
   await api.files.restore({ path: backupPath.value, backup_id: row.id })
   ElMessage.success('已恢复')
 }

@@ -20,7 +20,7 @@
               <el-option :value="10" label="10 秒" />
               <el-option :value="30" label="30 秒" />
             </el-select>
-            <el-button size="small" type="primary" :loading="capturing" @click="refreshSnapshot">
+            <el-button size="small" type="primary" :loading="capturing" @click="refreshSnapshot()">
               立即采集
             </el-button>
           </div>
@@ -131,6 +131,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import api from '@/api'
 import ResourceGauges from '@/components/ResourceGauges.vue'
 import MetricsLineChart from '@/components/MetricsLineChart.vue'
+import { fmtTs } from '@/utils/time'
 
 const summary = ref<Record<string, unknown>>({})
 const health = ref<Record<string, any>>({})
@@ -159,7 +160,7 @@ function pretty(v: unknown) {
 
 function fmtTime(v: unknown) {
   const s = String(v ?? '')
-  return s ? s.replace('T', ' ').slice(0, 19) : '-'
+  return s ? fmtTs(s) : '-'
 }
 
 function alertTagType(status: string) {
@@ -170,18 +171,18 @@ function alertTagType(status: string) {
 }
 
 async function refreshAll() {
-  const [s, h, r] = await Promise.all([
+  const results = await Promise.allSettled([
     api.platform.adminSummary(),
     api.platform.adminHealth(),
     api.platform.runtimeContext(),
   ])
-  summary.value = s
-  health.value = h
-  runtime.value = r
+  if (results[0].status === 'fulfilled') summary.value = results[0].value
+  if (results[1].status === 'fulfilled') health.value = results[1].value
+  if (results[2].status === 'fulfilled') runtime.value = results[2].value
 }
 
 async function refreshSnapshot(silent = false) {
-  capturing.value = true
+  if (!silent) capturing.value = true
   try {
     const res = (await api.monitor.snapshot()) as Record<string, any>
     latest.value = (res?.snapshot ?? res) as Record<string, any>
@@ -198,9 +199,18 @@ async function loadHistory() {
   historyRows.value = await api.monitor.history({ limit: 100 })
 }
 
+let polling = false
 function startTimer() {
   stopTimer()
-  timer = window.setInterval(() => refreshSnapshot(true), refreshInterval.value * 1000)
+  timer = window.setInterval(async () => {
+    if (polling) return
+    polling = true
+    try {
+      await refreshSnapshot(true)
+    } finally {
+      polling = false
+    }
+  }, refreshInterval.value * 1000)
 }
 
 function stopTimer() {
@@ -216,7 +226,7 @@ watch([autoRefresh, refreshInterval], ([on]) => {
 })
 
 onMounted(async () => {
-  await refreshAll()
+  await refreshAll().catch(() => undefined)
   try {
     latest.value = await api.monitor.latest()
     if (!latest.value || !Object.keys(latest.value).length) latest.value = null

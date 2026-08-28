@@ -151,8 +151,13 @@ const sectionIcon = computed(() => {
 
 async function onCommand(cmd: string) {
   if (cmd === 'logout') {
-    await auth.logout()
-    router.push({ name: 'login' })
+    try {
+      await auth.logout()
+    } catch {
+      /* 会话已在本地清除，忽略远端失败 */
+    } finally {
+      router.push({ name: 'login' })
+    }
   }
 }
 </script>

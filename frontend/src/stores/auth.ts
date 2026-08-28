@@ -47,17 +47,18 @@ export const useAuthStore = defineStore('auth', {
       setCsrf('')
       localStorage.removeItem(USER_KEY)
     },
-    async bootstrap() {
-      if (!this.checked) {
-        try {
-          const res = await api.auth.bootstrap()
-          this.initialized = res.initialized
-        } catch {
-          this.initialized = false
-        }
-        this.checked = true
+    async bootstrap(): Promise<boolean | null> {
+      if (this.checked) {
+        return this.initialized === true
       }
-      return this.initialized === true
+      try {
+        const res = await api.auth.bootstrap()
+        this.initialized = res.initialized
+        this.checked = true
+        return this.initialized === true
+      } catch {
+        return null
+      }
     },
     async login(username: string, password: string) {
       const res = (await api.auth.login(username, password)) as unknown as Record<string, unknown>
