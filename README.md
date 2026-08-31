@@ -13,7 +13,10 @@
 
 ## 快速启动
 
+**Windows 一键运行**：双击项目根目录的 `start.bat` 即可——自动检测 Java/前端产物/后端 jar（缺失时用 Maven 构建）、后台启动服务、等待健康检查并自动打开浏览器访问控制台。数据存放在 `.runtime/`，日志在 `.runtime/console.log`。再次双击会直接打开已运行的控制台；`stop.bat` 一键停止。
+
 ```bash
+# 手动方式
 mvn spring-boot:run
 
 # 或打包运行
