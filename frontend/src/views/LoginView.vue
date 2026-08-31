@@ -119,21 +119,21 @@ async function submit() {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(1200px 600px at 20% 0%, #1b2f55 0%, transparent 60%),
-    radial-gradient(1000px 500px at 90% 100%, #14315c 0%, transparent 55%),
-    linear-gradient(135deg, #0c1526 0%, #101d38 100%);
+    radial-gradient(1000px 520px at 15% 0%, rgba(47, 107, 255, 0.1) 0%, transparent 55%),
+    radial-gradient(900px 480px at 95% 90%, rgba(123, 63, 242, 0.08) 0%, transparent 55%),
+    linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
 }
 .blob {
   position: absolute;
   border-radius: 50%;
   filter: blur(70px);
-  opacity: 0.5;
+  opacity: 0.18;
   pointer-events: none;
 }
 .b1 {
   width: 380px;
   height: 380px;
-  background: #2f6bff;
+  background: var(--brand);
   top: -120px;
   left: -80px;
 }
@@ -150,15 +150,14 @@ async function submit() {
   background: #00b4d8;
   bottom: 10%;
   left: 12%;
-  opacity: 0.25;
+  opacity: 0.12;
 }
 .login-card {
   width: 400px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 24px 60px rgba(4, 12, 30, 0.5);
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 50px rgba(47, 107, 255, 0.1);
   z-index: 1;
 }
 .title {
@@ -171,21 +170,21 @@ async function submit() {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #2f6bff, #5b8cff);
+  background: linear-gradient(135deg, var(--brand), var(--brand-soft));
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.45);
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.3);
 }
 .t1 {
   font-size: 17px;
   font-weight: 700;
-  color: #1f2d3d;
+  color: var(--text-primary);
 }
 .t2 {
   font-size: 12px;
-  color: #7b8aa0;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 .submit {
@@ -199,8 +198,28 @@ async function submit() {
 }
 .foot {
   text-align: center;
-  color: #a3aec1;
+  color: var(--text-secondary);
   font-size: 12px;
   margin-top: 18px;
+}
+
+/* 暗色模式下保留深色沉浸式登录背景 */
+html.dark .login-wrap {
+  background:
+    radial-gradient(1200px 600px at 20% 0%, #1b2f55 0%, transparent 60%),
+    radial-gradient(1000px 500px at 90% 100%, #14315c 0%, transparent 55%),
+    linear-gradient(135deg, #0c1526 0%, #101d38 100%);
+}
+html.dark .blob {
+  opacity: 0.5;
+}
+html.dark .b3 {
+  opacity: 0.25;
+}
+html.dark .login-card {
+  background: rgba(28, 35, 44, 0.92);
+  backdrop-filter: blur(14px);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 </style>

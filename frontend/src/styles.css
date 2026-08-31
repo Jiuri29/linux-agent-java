@@ -1,10 +1,127 @@
+/* ==========================================================================
+   设计令牌
+   明暗两套 surface，Element Plus 变量在此统一覆写，避免组件库默认值与品牌色打架
+   ========================================================================== */
 :root {
+  color-scheme: light;
+
+  /* 品牌色阶 */
   --brand: #2f6bff;
-  --brand-light: #5b8cff;
-  --sidebar-bg: linear-gradient(180deg, #101a33 0%, #0b1226 100%);
+  --brand-hover: #4a7dff;
+  --brand-active: #2456d6;
+  --brand-soft: #5b8cff;
+  --brand-light: #7ea5ff;
+
+  /* 表面与文字：白色为主色调 */
+  --page-bg: #ffffff;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f6f8fb;
+  --border: rgba(15, 23, 42, 0.07);
+  --border-strong: rgba(15, 23, 42, 0.13);
+  --text-primary: #1f2d3d;
+  --text-regular: #4e5969;
+  --text-secondary: #86909c;
+
+  /* 代码块 */
+  --code-bg: #f6f8fa;
+  --code-fg: #24292f;
+  --code-border: rgba(0, 0, 0, 0.06);
+
+  /* 形状与阴影 */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --card-radius: var(--radius-lg);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.03);
+  --shadow-hover: 0 10px 28px rgba(16, 24, 40, 0.09);
+
   --sidebar-width: 224px;
-  --page-bg: #f3f5fa;
-  --card-radius: 10px;
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #55627a;
+  --sidebar-text-dim: #a3aebf;
+  --menu-hover-bg: rgba(47, 107, 255, 0.07);
+  --menu-active-bg: var(--el-color-primary-light-9);
+  --menu-active-text: var(--brand);
+
+  /* Element Plus 主色对齐品牌色 */
+  --el-color-primary: #2f6bff;
+  --el-color-primary-light-3: #5b8cff;
+  --el-color-primary-light-5: #7ea5ff;
+  --el-color-primary-light-7: #a6c0ff;
+  --el-color-primary-light-8: #bfd2ff;
+  --el-color-primary-light-9: #dce5ff;
+  --el-color-primary-dark-2: #2456d6;
+
+  /* Element Plus 表面/文字对齐设计令牌 */
+  --el-bg-color: var(--surface);
+  --el-bg-color-page: var(--page-bg);
+  --el-bg-color-overlay: var(--surface-raised);
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-regular);
+  --el-text-color-secondary: var(--text-secondary);
+  --el-border-color: var(--border-strong);
+  --el-border-color-light: var(--border);
+  --el-border-color-lighter: var(--border);
+  --el-border-color-extra-light: var(--border);
+  --el-fill-color: var(--surface-sunken);
+  --el-fill-color-light: var(--surface-sunken);
+  --el-fill-color-lighter: var(--surface-sunken);
+  --el-fill-color-blank: var(--surface);
+  --el-border-radius-base: var(--radius-md);
+  --el-border-radius-small: var(--radius-sm);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --page-bg: #0d1117;
+  --surface: #151b23;
+  --surface-raised: #1c232c;
+  --surface-sunken: #1b222c;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text-primary: #e6edf3;
+  --text-regular: #c2ccd8;
+  --text-secondary: #8b98a9;
+
+  --code-bg: #0d1117;
+  --code-fg: #c9d1d9;
+  --code-border: rgba(255, 255, 255, 0.06);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  --sidebar-bg: linear-gradient(180deg, #0e1726 0%, #090e18 100%);
+  --sidebar-text: #9aa8c0;
+  --sidebar-text-dim: #5a6a85;
+  --menu-hover-bg: rgba(255, 255, 255, 0.06);
+  --menu-active-bg: #1a2440;
+  --menu-active-text: #8ab0ff;
+
+  --el-color-primary: #3d75ff;
+  --el-color-primary-light-3: #6b95ff;
+  --el-color-primary-light-5: #8aadff;
+  --el-color-primary-light-7: #aec6ff;
+  --el-color-primary-light-8: #c4d5ff;
+  --el-color-primary-light-9: #1a2440;
+  --el-color-primary-dark-2: #5b8cff;
+
+  --el-bg-color: var(--surface);
+  --el-bg-color-page: var(--page-bg);
+  --el-bg-color-overlay: var(--surface-raised);
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-regular);
+  --el-text-color-secondary: var(--text-secondary);
+  --el-border-color: var(--border-strong);
+  --el-border-color-light: var(--border);
+  --el-border-color-lighter: var(--border);
+  --el-border-color-extra-light: var(--border);
+  --el-fill-color: var(--surface-sunken);
+  --el-fill-color-light: var(--surface-sunken);
+  --el-fill-color-lighter: var(--surface-sunken);
+  --el-fill-color-blank: var(--surface);
 }
 
 html,
@@ -19,44 +136,38 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', sans-serif;
   background: var(--page-bg);
+  color: var(--text-regular);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-html.dark {
-  --page-bg: #0d1117;
-  --sidebar-bg: linear-gradient(180deg, #0d1117 0%, #090c14 100%);
 }
 
 /* ---------- 卡片 ---------- */
 .el-card {
   border-radius: var(--card-radius);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
 }
-html.dark .el-card {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: #161b22;
+.el-card.is-hover-shadow:hover,
+.el-card.is-hover-shadow:focus {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--border-strong);
 }
 .el-card__header {
   font-weight: 600;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-html.dark .el-card__header {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
 }
 
 /* ---------- 表格 ---------- */
 .el-table {
-  border-radius: 8px;
-  --el-table-header-bg-color: #f7f9fc;
-  --el-table-header-text-color: #5a6478;
-  --el-table-row-hover-bg-color: #f0f4ff;
-}
-html.dark .el-table {
-  --el-table-header-bg-color: #1c2330;
-  --el-table-header-text-color: #9aa4b8;
-  --el-table-row-hover-bg-color: #1c2740;
+  border-radius: var(--radius-md);
+  --el-table-header-bg-color: var(--surface-sunken);
+  --el-table-header-text-color: var(--text-secondary);
+  --el-table-row-hover-bg-color: var(--el-color-primary-light-9);
+  --el-table-border-color: var(--border);
 }
 .el-table th.el-table__cell {
   font-weight: 600;
@@ -69,7 +180,7 @@ html.dark .el-table {
   border-radius: 7px;
 }
 .el-dialog {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 .el-drawer {
   --el-drawer-padding-primary: 20px;
@@ -81,17 +192,17 @@ html.dark .el-table {
 }
 .el-menu-item {
   margin: 4px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   height: 44px;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 .el-menu-item:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: var(--menu-hover-bg) !important;
 }
 .el-menu-item.is-active {
-  background: linear-gradient(90deg, rgba(47, 107, 255, 0.9), rgba(91, 140, 255, 0.75)) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 12px rgba(47, 107, 255, 0.35);
+  background: var(--menu-active-bg) !important;
+  color: var(--menu-active-text) !important;
+  font-weight: 600;
 }
 
 /* ---------- 滚动条 ---------- */
@@ -129,15 +240,16 @@ html.dark .el-table {
   font-size: 12px;
 }
 .muted {
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 12px;
 }
 
 pre.output {
-  background: #0d1117;
-  color: #c9d1d9;
+  background: var(--code-bg);
+  color: var(--code-fg);
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--code-border);
   overflow: auto;
   max-height: 420px;
   font-size: 12px;
@@ -145,18 +257,4 @@ pre.output {
   white-space: pre-wrap;
   word-break: break-all;
   font-family: 'JetBrains Mono', Consolas, Menlo, monospace;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* ---------- 路由过渡 ---------- */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-.fade-slide-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
-}
-.fade-slide-leave-to {
-  opacity: 0;
 }

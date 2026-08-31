@@ -18,7 +18,7 @@ const chartEl = ref<HTMLDivElement>()
 let chart: echarts.ECharts | null = null
 
 const SERIES_DEF = [
-  { key: 'cpu.usage_percent', name: 'CPU %', color: '#409eff' },
+  { key: 'cpu.usage_percent', name: 'CPU %', color: '#2f6bff' },
   { key: 'memory.usage_percent', name: '内存 %', color: '#67c23a' },
   { key: 'disk.usage_percent_max', name: '磁盘 %', color: '#e6a23c' },
 ]

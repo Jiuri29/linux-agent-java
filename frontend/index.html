@@ -8,6 +8,19 @@
     <title>Linux AIOps 安全运维 Agent 控制台</title>
   </head>
   <body>
+    <script>
+      // 首屏前定主题，避免暗色模式下闪一下白底
+      (function () {
+        try {
+          var s = localStorage.getItem('ops_theme_dark')
+          var dark =
+            s === '1' ? true : s === '0' ? false : window.matchMedia('(prefers-color-scheme: dark)').matches
+          if (dark) document.documentElement.classList.add('dark')
+        } catch (e) {
+          /* localStorage 不可用时退回浅色 */
+        }
+      })()
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

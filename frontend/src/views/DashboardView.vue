@@ -43,22 +43,20 @@
       <MetricsLineChart v-else :entries="historyRows" height="300px" />
     </el-card>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="16">
-      <el-col v-for="card in summaryCards" :key="card.label" :span="6">
-        <el-card class="page-card stat-card" shadow="hover">
-          <div class="stat-inner">
-            <div class="stat-icon" :style="{ background: card.bg, color: card.color }">
-              <el-icon :size="20"><component :is="card.icon" /></el-icon>
-            </div>
-            <div class="stat-meta">
-              <div class="stat-num">{{ card.value ?? 0 }}</div>
-              <div class="stat-label">{{ card.label }}</div>
-            </div>
+    <!-- 统计卡片：自适应网格，卡片数量变化时不会留缺口 -->
+    <div class="stat-grid">
+      <el-card v-for="card in summaryCards" :key="card.label" class="stat-card" shadow="hover">
+        <div class="stat-inner">
+          <div class="stat-icon" :style="{ background: card.bg, color: card.color }">
+            <el-icon :size="20"><component :is="card.icon" /></el-icon>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          <div class="stat-meta">
+            <div class="stat-num">{{ card.value ?? 0 }}</div>
+            <div class="stat-label">{{ card.label }}</div>
+          </div>
+        </div>
+      </el-card>
+    </div>
 
     <!-- 次要信息 -->
     <el-row :gutter="16">
@@ -249,7 +247,7 @@ onBeforeUnmount(stopTimer)
   justify-content: space-between;
 }
 .muted {
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 12px;
   margin-top: 8px;
 }
@@ -259,11 +257,18 @@ onBeforeUnmount(stopTimer)
 .hero-title {
   font-size: 15px;
   font-weight: 700;
+  color: var(--text-primary);
 }
 .chart-title {
   font-size: 13px;
   font-weight: 600;
-  color: #606266;
+  color: var(--text-regular);
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
 }
 .stat-inner {
   display: flex;
@@ -284,9 +289,10 @@ onBeforeUnmount(stopTimer)
   font-weight: 700;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
 .stat-label {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <el-container class="layout">
-    <el-aside :width="collapsed ? '64px' : '224px'" class="aside">
+    <el-aside :width="collapsed ? '64px' : 'var(--sidebar-width)'" class="aside">
       <div class="brand" @click="$router.push('/')">
         <div class="logo">
           <el-icon :size="18"><Cpu /></el-icon>
@@ -15,8 +15,8 @@
         :collapse="collapsed"
         :default-active="$route.path"
         background-color="transparent"
-        text-color="#9aa8c0"
-        active-text-color="#ffffff"
+        text-color="var(--sidebar-text)"
+        active-text-color="var(--menu-active-text)"
         class="menu"
       >
         <div v-if="!collapsed" class="menu-group">观测</div>
@@ -168,6 +168,7 @@ async function onCommand(cmd: string) {
 }
 .aside {
   background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   transition: width 0.25s ease;
@@ -191,10 +192,10 @@ async function onCommand(cmd: string) {
   justify-content: center;
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(47, 107, 255, 0.4);
+  box-shadow: 0 4px 10px rgba(47, 107, 255, 0.28);
 }
 .brand-text {
-  color: #fff;
+  color: var(--text-primary);
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.5px;
@@ -206,7 +207,7 @@ async function onCommand(cmd: string) {
   overflow-x: hidden;
 }
 .menu-group {
-  color: #5a6a85;
+  color: var(--sidebar-text-dim);
   font-size: 11px;
   letter-spacing: 1.5px;
   padding: 14px 22px 4px;
@@ -214,26 +215,24 @@ async function onCommand(cmd: string) {
 }
 .aside-footer {
   padding: 8px 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border);
 }
 .collapse-btn {
-  color: #9aa8c0;
+  color: var(--text-secondary);
   width: 100%;
 }
 .header {
-  background: var(--el-bg-color);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
 }
-html.dark .header {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
-}
 .crumb {
   font-size: 15px;
   font-weight: 600;
+  color: var(--text-primary);
 }
 .header-actions {
   display: flex;
@@ -251,10 +250,7 @@ html.dark .header {
   transition: background 0.2s;
 }
 .user-chip:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-html.dark .user-chip:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-sunken);
 }
 .avatar {
   background: linear-gradient(135deg, var(--brand), var(--brand-light));

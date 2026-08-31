@@ -31,7 +31,7 @@ export const useAuthStore = defineStore('auth', {
     displayName: (s) => s.user?.display_name || s.user?.username || '',
     roles: (s) => s.user?.roles ?? [],
     isAdmin(): boolean {
-      return this.roles.includes('admin')
+      return this.roles.includes('admin') || this.roles.includes('super_admin')
     },
   },
   actions: {

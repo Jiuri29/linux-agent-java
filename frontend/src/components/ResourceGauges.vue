@@ -112,17 +112,18 @@ const gauges = computed(() => {
 }
 .gauge-value .sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 .gauge-label {
   margin-top: 10px;
   font-weight: 600;
   font-size: 14px;
+  color: var(--text-primary);
 }
 .gauge-detail {
   margin-top: 2px;
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;

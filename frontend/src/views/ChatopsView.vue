@@ -170,7 +170,7 @@ onMounted(() => {
 }
 .meta {
   font-size: 11px;
-  color: #909399;
+  color: var(--text-secondary);
   margin-bottom: 4px;
 }
 .actions {
@@ -194,10 +194,10 @@ onMounted(() => {
   cursor: pointer;
 }
 .tpl:hover {
-  border-color: #409eff;
+  border-color: var(--brand);
 }
 .muted {
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 12px;
 }
 </style>

@@ -217,7 +217,7 @@ onMounted(() => {
 
 <style scoped>
 .muted {
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 12px;
 }
 </style>
