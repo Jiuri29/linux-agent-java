@@ -7,7 +7,7 @@
         <div class="spacer" />
         <span class="muted">{{ users.length }} 个用户</span>
       </div>
-      <el-table :data="users" size="small" border>
+      <el-table v-loading="usersLoading" :data="users" size="small" border>
         <el-table-column prop="username" label="用户名" min-width="120" />
         <el-table-column prop="display_name" label="显示名称" min-width="120">
           <template #default="{ row }">{{ row.display_name || '-' }}</template>
@@ -40,7 +40,7 @@
         <el-button type="primary" @click="openRole()">新建角色</el-button>
         <el-button @click="loadRoles">刷新</el-button>
       </div>
-      <el-table :data="roles" size="small" border>
+      <el-table v-loading="rolesLoading" :data="roles" size="small" border>
         <el-table-column prop="name" label="角色" min-width="140" />
         <el-table-column label="权限点" min-width="420">
           <template #default="{ row }">
@@ -104,7 +104,9 @@ import api from '@/api'
 
 const tab = ref('users')
 const users = ref<Record<string, any>[]>([])
+const usersLoading = ref(false)
 const roles = ref<Record<string, any>[]>([])
+const rolesLoading = ref(false)
 const roleNames = computed(() => roles.value.map((r) => String(r.name)))
 const permissionOptions = [
   'assets:read', 'assets:write', 'monitor:read', 'monitor:write', 'services:read',
@@ -123,10 +125,20 @@ const userForm = reactive({ username: '', password: '', displayName: '', roles: 
 const roleForm = reactive({ name: '', permissions: [] as string[] })
 
 async function loadUsers() {
-  users.value = await api.users.list()
+  usersLoading.value = true
+  try {
+    users.value = await api.users.list()
+  } finally {
+    usersLoading.value = false
+  }
 }
 async function loadRoles() {
-  roles.value = await api.users.roles()
+  rolesLoading.value = true
+  try {
+    roles.value = await api.users.roles()
+  } finally {
+    rolesLoading.value = false
+  }
 }
 
 function openUser(row?: Record<string, any>) {

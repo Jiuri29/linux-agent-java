@@ -5,7 +5,13 @@
         <div ref="msgBox" class="msgs">
           <el-empty v-if="!messages.length" description="描述你的运维意图，Agent 将评估并执行" :image-size="70" />
           <div v-for="(m, i) in messages" :key="i" :class="['bubble', m.role]">
-            <div class="meta">{{ m.role === 'user' ? '我' : 'Agent' }} · {{ m.ts }}</div>
+            <div class="meta">
+              <span class="role-chip" :class="m.role">
+                <el-icon :size="10"><component :is="m.role === 'user' ? 'User' : 'Cpu'" /></el-icon>
+              </span>
+              <span class="role-name">{{ m.role === 'user' ? '我' : 'Agent' }}</span>
+              <span class="ts">{{ m.ts }}</span>
+            </div>
             <div class="text">{{ m.text }}</div>
             <div v-if="m.actions?.length" class="actions">
               <div v-for="a in m.actions" :key="a.id" class="action-item">
@@ -151,53 +157,104 @@ onMounted(() => {
 .msgs {
   height: 420px;
   overflow-y: auto;
-  background: var(--el-fill-color-lighter, #fafafa);
-  border: 1px solid var(--el-border-color-lighter, #ebeef5);
-  border-radius: 6px;
-  padding: 12px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
 }
 .bubble {
-  max-width: 82%;
+  max-width: 85%;
   margin-bottom: 12px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--el-bg-color-overlay, #fff);
-  border: 1px solid var(--el-border-color-light, #e4e7ed);
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+  animation: bubble-in 0.25s var(--ease-out);
+}
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .bubble.user {
   margin-left: auto;
-  background: var(--el-color-primary-light-9, #ecf5ff);
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary-light-8);
+}
+.bubble.user .text {
+  color: var(--text-primary);
 }
 .meta {
-  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 5px;
+}
+.role-chip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.role-chip.agent {
+  background: var(--brand-gradient);
+  color: #fff;
+}
+.role-name {
+  font-weight: 650;
+  color: var(--text-primary);
+}
+.ts {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.text {
+  font-size: var(--text-md);
+  line-height: 1.65;
+  color: var(--text-regular);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .actions {
-  margin-top: 6px;
+  margin-top: 8px;
 }
 .action-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
-  background: var(--el-color-warning-light-9, #fdf6ec);
-  border: 1px solid var(--el-color-warning-light-8, #faecd8);
-  border-radius: 4px;
+  padding: 7px 10px;
+  background: var(--el-color-warning-light-9);
+  border: 1px solid var(--el-color-warning-light-8);
+  border-radius: 8px;
   margin-bottom: 6px;
 }
 .tpl {
-  padding: 8px 10px;
-  border: 1px solid var(--el-border-color-lighter, #ebeef5);
-  border-radius: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   margin-bottom: 8px;
   cursor: pointer;
+  transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 .tpl:hover {
   border-color: var(--brand);
+  background: var(--el-color-primary-light-9);
 }
 .muted {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 </style>

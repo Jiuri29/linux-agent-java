@@ -1,6 +1,9 @@
 <template>
   <el-tabs v-model="tab">
-    <el-tab-pane label="资产列表" name="list">
+    <el-tab-pane name="list">
+      <template #label>
+        资产列表<el-badge v-if="rows.length" :value="rows.length" :max="999" style="margin-left: 4px" />
+      </template>
       <div class="toolbar">
         <el-input v-model="query.q" placeholder="关键字搜索" clearable style="width: 200px" @keyup.enter="load" />
         <el-select v-model="query.group" placeholder="分组" clearable style="width: 140px">
@@ -27,7 +30,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="os" label="操作系统" min-width="130" show-overflow-tooltip />
-        <el-table-column prop="environment" label="环境" width="90" />
+        <el-table-column prop="environment" label="环境" width="116">
+          <template #default="{ row }">
+            <span class="status-pill" :class="envPill(row.environment)">
+              <i />{{ row.environment || '-' }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <el-button size="small" text type="primary" @click="showDetail(row)">详情</el-button>
@@ -213,6 +222,13 @@ const depForm = reactive({ from_asset_id: '', to_asset_id: '', type: '' })
 
 function pretty(v: unknown) {
   return JSON.stringify(v, null, 2)
+}
+
+function envPill(env: string): string {
+  if (env === 'prod') return 'status-info'
+  if (env === 'staging') return 'status-warn'
+  if (env === 'dev') return 'status-neutral'
+  return 'status-neutral'
 }
 
 async function load() {

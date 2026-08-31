@@ -121,8 +121,8 @@ onMounted(load)
 .notes {
   margin: 0;
   padding-left: 18px;
-  color: #606266;
-  font-size: 13px;
+  color: var(--text-regular);
+  font-size: var(--text-base);
   line-height: 1.9;
 }
 </style>

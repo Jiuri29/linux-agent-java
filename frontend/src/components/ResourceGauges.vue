@@ -9,6 +9,7 @@
             :width="130"
             :stroke-width="12"
             :color="g.color"
+            stroke-linecap="round"
           >
             <template #default>
               <div class="gauge-value">
@@ -106,9 +107,11 @@ const gauges = computed(() => {
   align-items: center;
 }
 .gauge-value .num {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
 .gauge-value .sub {
   font-size: 12px;
@@ -116,8 +119,8 @@ const gauges = computed(() => {
 }
 .gauge-label {
   margin-top: 10px;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 650;
+  font-size: var(--text-md);
   color: var(--text-primary);
 }
 .gauge-detail {

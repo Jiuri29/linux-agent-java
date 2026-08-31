@@ -80,7 +80,7 @@
         </el-radio-group>
         <el-button @click="loadAlerts">刷新</el-button>
       </div>
-      <el-table :data="alerts" size="small" border>
+      <el-table v-loading="loadingAlerts" :data="alerts" size="small" border>
         <el-table-column prop="id" label="ID" min-width="150" show-overflow-tooltip />
         <el-table-column prop="rule_id" label="规则" min-width="130" />
         <el-table-column prop="host" label="主机" min-width="120" />
@@ -127,7 +127,7 @@
       <el-row :gutter="16">
         <el-col :span="14">
           <el-card class="page-card" header="规则列表" shadow="never">
-            <el-table :data="rules" size="small" border>
+            <el-table v-loading="loadingRules" :data="rules" size="small" border>
               <el-table-column prop="id" label="ID" min-width="120" />
               <el-table-column prop="name" label="名称" min-width="140" />
               <el-table-column prop="metric" label="指标" min-width="110" />
@@ -200,12 +200,14 @@ function fmtKb(kb: unknown) {
 
 const alertFilter = ref('')
 const alerts = ref<Record<string, any>[]>([])
+const loadingAlerts = ref(false)
 const activeCount = computed(() => alerts.value.filter((a) => a.status === 'active').length)
 const suppressions = ref<unknown>([])
 const notifications = ref<unknown>([])
 const suppression = reactive({ pattern: '' })
 
 const rules = ref<Record<string, any>[]>([])
+const loadingRules = ref(false)
 const rulesText = ref('[]')
 const risk = ref<Record<string, any> | null>(null)
 
@@ -282,9 +284,14 @@ watch([autoRefresh, refreshInterval], ([on]) => {
   else stopTimer()
 })
 async function loadAlerts() {
-  alerts.value = await api.monitor.alerts(alertFilter.value || undefined)
-  suppressions.value = await api.monitor.suppressions()
-  notifications.value = await api.monitor.notifications()
+  loadingAlerts.value = true
+  try {
+    alerts.value = await api.monitor.alerts(alertFilter.value || undefined)
+    suppressions.value = await api.monitor.suppressions()
+    notifications.value = await api.monitor.notifications()
+  } finally {
+    loadingAlerts.value = false
+  }
 }
 
 async function transition(row: Record<string, any>, action: 'acknowledge' | 'escalate' | 'recover') {
@@ -303,8 +310,13 @@ async function addSuppression() {
 }
 
 async function loadRules() {
-  rules.value = await api.monitor.alertRules()
-  rulesText.value = JSON.stringify(rules.value, null, 2)
+  loadingRules.value = true
+  try {
+    rules.value = await api.monitor.alertRules()
+    rulesText.value = JSON.stringify(rules.value, null, 2)
+  } finally {
+    loadingRules.value = false
+  }
 }
 
 async function saveRules() {

@@ -1,5 +1,6 @@
 target/
 .runtime/
+.workbuddy/
 *.log
 
 frontend/node_modules/

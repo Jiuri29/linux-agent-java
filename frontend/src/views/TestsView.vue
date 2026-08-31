@@ -7,7 +7,7 @@
           <el-button size="small" :disabled="!selected.length" @click="runSelected">执行所选（{{ selected.length }}）</el-button>
           <el-button @click="loadCatalog">刷新</el-button>
         </div>
-        <el-table ref="tableRef" :data="cases" size="small" border max-height="420"
+        <el-table ref="tableRef" v-loading="casesLoading" :data="cases" size="small" border max-height="420"
           @selection-change="(sels: any[]) => (selected = sels)">
           <el-table-column type="selection" width="42" />
           <el-table-column prop="id" label="用例 ID" min-width="170" show-overflow-tooltip />
@@ -20,7 +20,7 @@
     <el-col :span="14">
       <el-card class="page-card" header="运行记录" shadow="never">
         <div class="toolbar"><el-button size="small" @click="loadRuns">刷新</el-button></div>
-        <el-table :data="runs" size="small" border max-height="240" highlight-current-row @row-click="showRun">
+        <el-table v-loading="runsLoading" :data="runs" size="small" border max-height="240" highlight-current-row @row-click="showRun">
           <el-table-column prop="id" label="运行 ID" min-width="160" show-overflow-tooltip />
           <el-table-column prop="ts" label="时间" min-width="150">
             <template #default="{ row }">{{ row.ts || row.created_at || '-' }}</template>
@@ -60,7 +60,9 @@ import ops from '@/api/ops'
 import http from '@/api/http'
 
 const cases = ref<Record<string, any>[]>([])
+const casesLoading = ref(false)
 const runs = ref<Record<string, any>[]>([])
+const runsLoading = ref(false)
 const selected = ref<Record<string, any>[]>([])
 const running = ref(false)
 const detail = ref<unknown>(null)
@@ -71,12 +73,22 @@ function pretty(v: unknown) {
 }
 
 async function loadCatalog() {
-  const res = await ops.tests.catalog()
-  cases.value = (Array.isArray(res) ? res : res.cases ?? []) as Record<string, any>[]
+  casesLoading.value = true
+  try {
+    const res = await ops.tests.catalog()
+    cases.value = (Array.isArray(res) ? res : res.cases ?? []) as Record<string, any>[]
+  } finally {
+    casesLoading.value = false
+  }
 }
 
 async function loadRuns() {
-  runs.value = await ops.tests.runs(20)
+  runsLoading.value = true
+  try {
+    runs.value = await ops.tests.runs(20)
+  } finally {
+    runsLoading.value = false
+  }
 }
 
 async function runAll() {

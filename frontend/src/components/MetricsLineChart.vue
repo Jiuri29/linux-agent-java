@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
+import { chartVars } from '@/utils/chartTheme'
 
 const props = withDefaults(
   defineProps<{
@@ -25,10 +26,7 @@ const SERIES_DEF = [
 
 function render() {
   if (!chart) return
-  const dark = document.documentElement.classList.contains('dark')
-  const axisColor = dark ? '#6e7a91' : '#8a94a6'
-  const splitColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
-  const tooltipBg = dark ? '#1c2330' : '#ffffff'
+  const cv = chartVars()
   const sorted = [...props.entries].sort((a, b) => String(a.ts).localeCompare(String(b.ts)))
   const xData = sorted.map((e) => String(e.ts ?? '').replace('T', ' ').slice(5, 19))
   const series = SERIES_DEF.map((def) => ({
@@ -57,27 +55,35 @@ function render() {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
-      backgroundColor: tooltipBg,
-      borderColor: splitColor,
-      textStyle: { color: dark ? '#e6edf3' : '#303133', fontSize: 12 },
+      backgroundColor: cv.tooltipBg,
+      borderColor: cv.tooltipBorder,
+      textStyle: { color: cv.tooltipText, fontSize: 12 },
+      extraCssText: 'box-shadow: 0 8px 28px rgba(0,0,0,0.14); border-radius: 8px;',
       valueFormatter: (v: unknown) => (v == null ? '-' : v + '%'),
     },
-    legend: { data: SERIES_DEF.map((s) => s.name), top: 0, icon: 'roundRect', itemWidth: 14, itemHeight: 4 },
+    legend: {
+      data: SERIES_DEF.map((s) => s.name),
+      top: 0,
+      icon: 'roundRect',
+      itemWidth: 14,
+      itemHeight: 4,
+      textStyle: { color: cv.legendText, fontSize: 11 },
+    },
     grid: { left: 44, right: 18, top: 34, bottom: 28 },
     xAxis: {
       type: 'category',
       data: xData,
       boundaryGap: false,
-      axisLine: { lineStyle: { color: splitColor } },
-      axisLabel: { color: axisColor, fontSize: 11 },
+      axisLine: { lineStyle: { color: cv.split } },
+      axisLabel: { color: cv.axis, fontSize: 11 },
       axisTick: { show: false },
     },
     yAxis: {
       type: 'value',
       min: 0,
       max: 100,
-      axisLabel: { color: axisColor, fontSize: 11, formatter: '{value}%' },
-      splitLine: { lineStyle: { color: splitColor } },
+      axisLabel: { color: cv.axis, fontSize: 11, formatter: '{value}%' },
+      splitLine: { lineStyle: { color: cv.split } },
     },
     series,
   }, true)

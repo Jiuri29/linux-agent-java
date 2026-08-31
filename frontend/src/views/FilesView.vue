@@ -57,7 +57,7 @@
 
       <el-card class="page-card" header="备份与恢复" shadow="never">
         <div class="muted" style="margin-bottom: 8px">当前文件：{{ backupPath || '（先在左侧点「备份」）' }}</div>
-        <el-table :data="backups" size="small" border max-height="240">
+        <el-table v-loading="backupsLoading" :data="backups" size="small" border max-height="240">
           <el-table-column prop="id" label="备份 ID" min-width="170" show-overflow-tooltip />
           <el-table-column prop="ts" label="时间" min-width="140">
             <template #default="{ row }">{{ row.ts || row.created_at || '-' }}</template>
@@ -102,6 +102,7 @@ const uploading = ref(false)
 
 const editor = reactive({ visible: false, path: '', content: '' })
 const backups = ref<Record<string, any>[]>([])
+const backupsLoading = ref(false)
 const backupPath = ref('')
 const diffDlg = reactive({ visible: false, text: '' })
 
@@ -209,8 +210,13 @@ async function createEmpty() {
 async function showBackups(row: Record<string, any>) {
   const p = row.path ?? joinPath(path.value, row.name)
   backupPath.value = p
-  const res = await api.files.backups(p)
-  backups.value = (Array.isArray(res) ? res : res.backups ?? []) as Record<string, any>[]
+  backupsLoading.value = true
+  try {
+    const res = await api.files.backups(p)
+    backups.value = (Array.isArray(res) ? res : res.backups ?? []) as Record<string, any>[]
+  } finally {
+    backupsLoading.value = false
+  }
 }
 
 async function diffBackup(row: Record<string, any>) {

@@ -5,7 +5,7 @@
         <el-button type="primary" @click="openRule()">新建规则</el-button>
         <el-button @click="loadRules">刷新</el-button>
       </div>
-      <el-table :data="rules" size="small" border>
+      <el-table v-loading="rulesLoading" :data="rules" size="small" border>
         <el-table-column prop="id" label="ID" min-width="130" show-overflow-tooltip />
         <el-table-column prop="name" label="名称" min-width="150" />
         <el-table-column prop="pattern" label="匹配模式" min-width="220">
@@ -36,12 +36,12 @@
         <el-button type="primary" @click="addExemption">添加豁免</el-button>
         <el-button @click="loadExemptions">刷新</el-button>
       </div>
-      <pre class="output">{{ pretty(exemptions) }}</pre>
+      <pre class="output" v-loading="exemptionsLoading">{{ pretty(exemptions) }}</pre>
     </el-tab-pane>
 
     <el-tab-pane label="审批记录" name="approvals">
       <div class="toolbar"><el-button @click="loadApprovals">刷新</el-button></div>
-      <el-table :data="approvals" size="small" border max-height="480">
+      <el-table v-loading="approvalsLoading" :data="approvals" size="small" border max-height="480">
         <el-table-column prop="ts" label="时间" min-width="160">
           <template #default="{ row }">{{ row.ts || row.created_at || '-' }}</template>
         </el-table-column>
@@ -116,8 +116,11 @@ import ops from '@/api/ops'
 
 const tab = ref('rules')
 const rules = ref<Record<string, any>[]>([])
+const rulesLoading = ref(false)
 const exemptions = ref<unknown>([])
+const exemptionsLoading = ref(false)
 const approvals = ref<Record<string, any>[]>([])
+const approvalsLoading = ref(false)
 const evaluateResult = ref<unknown>(null)
 
 const newExemption = reactive({ pattern: '', reason: '' })
@@ -129,15 +132,30 @@ function pretty(v: unknown) {
 }
 
 async function loadRules() {
-  rules.value = await ops.guardrails.rules()
+  rulesLoading.value = true
+  try {
+    rules.value = await ops.guardrails.rules()
+  } finally {
+    rulesLoading.value = false
+  }
 }
 
 async function loadExemptions() {
-  exemptions.value = await ops.guardrails.exemptions()
+  exemptionsLoading.value = true
+  try {
+    exemptions.value = await ops.guardrails.exemptions()
+  } finally {
+    exemptionsLoading.value = false
+  }
 }
 
 async function loadApprovals() {
-  approvals.value = await ops.guardrails.approvals(100)
+  approvalsLoading.value = true
+  try {
+    approvals.value = await ops.guardrails.approvals(100)
+  } finally {
+    approvalsLoading.value = false
+  }
 }
 
 function openRule(row?: Record<string, any>) {

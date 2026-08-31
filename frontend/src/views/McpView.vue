@@ -7,7 +7,7 @@
         <div class="spacer" />
         <span class="muted">{{ tools.length }} 个工具</span>
       </div>
-      <el-table :data="tools" size="small" border>
+      <el-table v-loading="toolsLoading" :data="tools" size="small" border>
         <el-table-column prop="name" label="工具名" min-width="180" />
         <el-table-column prop="description" label="说明" min-width="240" show-overflow-tooltip />
         <el-table-column prop="enabled" label="启用" width="80">
@@ -28,7 +28,7 @@
         <el-button type="primary" @click="regDlg.visible = true">注册插件</el-button>
         <el-button @click="loadPlugins">刷新</el-button>
       </div>
-      <el-table :data="plugins" size="small" border>
+      <el-table v-loading="pluginsLoading" :data="plugins" size="small" border>
         <el-table-column prop="name" label="插件名" min-width="150" />
         <el-table-column label="提供工具" min-width="220">
           <template #default="{ row }">
@@ -93,7 +93,9 @@ import ops from '@/api/ops'
 
 const tab = ref('tools')
 const tools = ref<Record<string, any>[]>([])
+const toolsLoading = ref(false)
 const plugins = ref<Record<string, any>[]>([])
+const pluginsLoading = ref(false)
 const capabilities = ref<unknown>(null)
 
 const invokeDlg = reactive({ visible: false, name: '', paramsText: '{}', result: '', loading: false })
@@ -106,11 +108,21 @@ function pretty(v: unknown) {
 }
 
 async function loadTools() {
-  tools.value = await ops.mcp.tools()
+  toolsLoading.value = true
+  try {
+    tools.value = await ops.mcp.tools()
+  } finally {
+    toolsLoading.value = false
+  }
 }
 
 async function loadPlugins() {
-  plugins.value = await ops.mcp.plugins()
+  pluginsLoading.value = true
+  try {
+    plugins.value = await ops.mcp.plugins()
+  } finally {
+    pluginsLoading.value = false
+  }
 }
 
 function openInvoke(row: Record<string, any>) {

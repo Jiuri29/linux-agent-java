@@ -22,7 +22,7 @@
 
       <el-card class="page-card" header="执行历史" shadow="never">
         <div class="toolbar"><el-button size="small" @click="loadHistory">刷新</el-button></div>
-        <el-table :data="historyRows" size="small" border max-height="320">
+        <el-table v-loading="historyLoading" :data="historyRows" size="small" border max-height="320">
           <el-table-column prop="ts" label="时间" min-width="160">
             <template #default="{ row }">{{ fmtTs(row.ts || row.created_at) }}</template>
           </el-table-column>
@@ -48,8 +48,8 @@
 
     <el-col :span="10">
       <el-card class="page-card" header="命令模板" shadow="never">
-        <el-empty v-if="!templates.length" description="暂无模板" :image-size="60" />
-        <el-table v-else :data="templates" size="small" border>
+        <el-empty v-if="!templates.length && !templatesLoading" description="暂无模板" :image-size="60" />
+        <el-table v-else-if="templates.length" v-loading="templatesLoading" :data="templates" size="small" border>
           <el-table-column prop="name" label="名称" min-width="120" />
           <el-table-column prop="command_template" label="模板" min-width="200" show-overflow-tooltip>
             <template #default="{ row }"><span class="mono">{{ row.command_template }}</span></template>
@@ -100,16 +100,28 @@ const output = ref('')
 const templates = ref<Record<string, any>[]>([])
 const historyRows = ref<Record<string, any>[]>([])
 const selectedTemplate = ref('')
+const historyLoading = ref(false)
+const templatesLoading = ref(false)
 
 const tplDlg = reactive({ visible: false, name: '', template: '' })
 const paramDlg = reactive({ visible: false, paramsText: '{}', templateId: '' })
 
 async function loadTemplates() {
-  templates.value = await api.terminal.templates()
+  templatesLoading.value = true
+  try {
+    templates.value = await api.terminal.templates()
+  } finally {
+    templatesLoading.value = false
+  }
 }
 
 async function loadHistory() {
-  historyRows.value = await api.terminal.history(50)
+  historyLoading.value = true
+  try {
+    historyRows.value = await api.terminal.history(50)
+  } finally {
+    historyLoading.value = false
+  }
 }
 
 async function run() {

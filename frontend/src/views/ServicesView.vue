@@ -29,6 +29,7 @@
           <span class="muted">选择两个版本做 diff</span>
         </div>
         <el-table
+          v-loading="versionsLoading"
           :data="versions"
           size="small"
           border
@@ -69,7 +70,7 @@
           <el-button type="primary" @click="runLifecycle">执行</el-button>
         </div>
         <el-card header="变更记录" shadow="never">
-          <el-table :data="changes" size="small" border max-height="300">
+          <el-table v-loading="changesLoading" :data="changes" size="small" border max-height="300">
             <el-table-column prop="ts" label="时间" min-width="160">
               <template #default="{ row }">{{ row.ts || row.created_at || '-' }}</template>
             </el-table-column>
@@ -119,7 +120,9 @@ const loading = ref(false)
 const rows = ref<Record<string, any>[]>([])
 const selected = ref<Record<string, any>[]>([])
 const versions = ref<Record<string, any>[]>([])
+const versionsLoading = ref(false)
 const changes = ref<Record<string, any>[]>([])
+const changesLoading = ref(false)
 const diffText = ref('')
 const readResult = ref<unknown>(null)
 const action = ref('deploy')
@@ -175,14 +178,24 @@ async function openDetail(row: Record<string, any>) {
 
 async function loadVersions() {
   if (!detail.id) return
-  const res = await api.services.versions(detail.id)
-  versions.value = (Array.isArray(res) ? res : res.versions ?? []) as Record<string, any>[]
+  versionsLoading.value = true
+  try {
+    const res = await api.services.versions(detail.id)
+    versions.value = (Array.isArray(res) ? res : res.versions ?? []) as Record<string, any>[]
+  } finally {
+    versionsLoading.value = false
+  }
 }
 
 async function loadChanges() {
   if (!detail.id) return
-  const res = await api.services.changes({ service_id: detail.id, limit: 100 })
-  changes.value = (Array.isArray(res) ? res : res.changes ?? []) as Record<string, any>[]
+  changesLoading.value = true
+  try {
+    const res = await api.services.changes({ service_id: detail.id, limit: 100 })
+    changes.value = (Array.isArray(res) ? res : res.changes ?? []) as Record<string, any>[]
+  } finally {
+    changesLoading.value = false
+  }
 }
 function newVersionDraft() {
   verDlg.content = ''

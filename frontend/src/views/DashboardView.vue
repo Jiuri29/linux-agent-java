@@ -5,7 +5,10 @@
       <template #header>
         <div class="row">
           <div class="row">
-            <span class="hero-title">实时资源监测</span>
+            <span class="hero-title">
+              <i v-if="autoRefresh" class="live-dot" style="margin-right: 8px" />
+              实时资源监测
+            </span>
             <el-tag size="small" type="success" effect="plain" round>
               {{ autoRefresh ? `每 ${refreshInterval}s 刷新` : '已暂停' }}
             </el-tag>
@@ -36,22 +39,34 @@
         <el-button size="small" text type="primary" @click="loadHistory">刷新曲线</el-button>
       </div>
       <el-empty
-        v-if="!historyRows.length"
+        v-if="!historyRows.length && !bootLoading"
         description="暂无历史数据，点击「立即采集」开始积累"
         :image-size="70"
       />
+      <div v-else-if="!historyRows.length" class="skeleton-block" style="height: 300px" />
       <MetricsLineChart v-else :entries="historyRows" height="300px" />
     </el-card>
 
     <!-- 统计卡片：自适应网格，卡片数量变化时不会留缺口 -->
     <div class="stat-grid">
-      <el-card v-for="card in summaryCards" :key="card.label" class="stat-card" shadow="hover">
+      <template v-if="bootLoading">
+        <el-card v-for="i in 7" :key="i" class="stat-card" shadow="never">
+          <div class="stat-inner">
+            <div class="skeleton-block stat-skel-icon" />
+            <div class="stat-meta" style="flex: 1">
+              <div class="skeleton-block stat-skel-num" />
+              <div class="skeleton-block stat-skel-label" />
+            </div>
+          </div>
+        </el-card>
+      </template>
+      <el-card v-for="card in summaryCards" v-else :key="card.label" class="stat-card" shadow="hover">
         <div class="stat-inner">
           <div class="stat-icon" :style="{ background: card.bg, color: card.color }">
             <el-icon :size="20"><component :is="card.icon" /></el-icon>
           </div>
           <div class="stat-meta">
-            <div class="stat-num">{{ card.value ?? 0 }}</div>
+            <div class="stat-num"><AnimatedNumber :value="Number(card.value ?? 0) || 0" /></div>
             <div class="stat-label">{{ card.label }}</div>
           </div>
         </div>
@@ -70,7 +85,7 @@
               </el-tag>
             </div>
           </template>
-          <el-table :data="health.checks ?? []" size="small">
+          <el-table v-loading="bootLoading" :data="health.checks ?? []" size="small">
             <el-table-column prop="name" label="检查项" min-width="160" />
             <el-table-column prop="ok" label="状态" width="90">
               <template #default="{ row }">
@@ -98,8 +113,8 @@
 
       <el-col :span="10">
         <el-card class="page-card" header="活跃告警">
-          <el-empty v-if="!alerts.length" description="暂无告警" :image-size="60" />
-          <el-table v-else :data="alerts" size="small">
+          <el-empty v-if="!alerts.length && !bootLoading" description="暂无告警" :image-size="60" />
+          <el-table v-else v-loading="bootLoading" :data="alerts" size="small">
             <el-table-column prop="rule_id" label="规则" min-width="120" />
             <el-table-column prop="host" label="主机" min-width="110" />
             <el-table-column prop="status" label="状态" width="100">
@@ -129,6 +144,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import api from '@/api'
 import ResourceGauges from '@/components/ResourceGauges.vue'
 import MetricsLineChart from '@/components/MetricsLineChart.vue'
+import AnimatedNumber from '@/components/AnimatedNumber.vue'
 import { fmtTs } from '@/utils/time'
 
 const summary = ref<Record<string, unknown>>({})
@@ -140,6 +156,7 @@ const historyRows = ref<Record<string, any>[]>([])
 const capturing = ref(false)
 const autoRefresh = ref(true)
 const refreshInterval = ref(10)
+const bootLoading = ref(true)
 let timer: number | undefined
 
 const summaryCards = computed(() => [
@@ -224,7 +241,11 @@ watch([autoRefresh, refreshInterval], ([on]) => {
 })
 
 onMounted(async () => {
-  await refreshAll().catch(() => undefined)
+  try {
+    await refreshAll().catch(() => undefined)
+  } catch {
+    /* ignore */
+  }
   try {
     latest.value = await api.monitor.latest()
     if (!latest.value || !Object.keys(latest.value).length) latest.value = null
@@ -232,6 +253,8 @@ onMounted(async () => {
     await loadHistory()
   } catch {
     /* ignore */
+  } finally {
+    bootLoading.value = false
   }
   if (!latest.value) await refreshSnapshot(true)
   if (autoRefresh.value) startTimer()
@@ -294,5 +317,22 @@ onBeforeUnmount(stopTimer)
 .stat-label {
   font-size: 12px;
   color: var(--text-secondary);
+}
+.stat-skel-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.stat-skel-num {
+  width: 72px;
+  height: 22px;
+  border-radius: 6px;
+}
+.stat-skel-label {
+  width: 48px;
+  height: 12px;
+  border-radius: 6px;
+  margin-top: 8px;
 }
 </style>

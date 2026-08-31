@@ -21,7 +21,7 @@
         </el-dropdown>
       </div>
 
-      <el-table :data="events" size="small" border max-height="480">
+      <el-table v-loading="eventsLoading" :data="events" size="small" border max-height="480">
         <el-table-column prop="ts" label="时间" min-width="165">
           <template #default="{ row }">{{ fmtTs(row.ts || row.timestamp) }}</template>
         </el-table-column>
@@ -52,7 +52,7 @@
 
     <el-tab-pane label="取证视图" name="forensics">
       <div class="toolbar"><el-button @click="loadForensics">刷新</el-button></div>
-      <pre class="output">{{ pretty(forensics) }}</pre>
+      <pre class="output" v-loading="forensicsLoading">{{ pretty(forensics) }}</pre>
     </el-tab-pane>
 
     <el-tab-pane label="合规报告" name="compliance">
@@ -76,8 +76,10 @@ import { fmtTs as fmtTsShared } from '@/utils/time'
 
 const tab = ref('query')
 const events = ref<Record<string, any>[]>([])
+const eventsLoading = ref(false)
 const verifyResult = ref<Record<string, any> | null>(null)
 const forensics = ref<unknown>(null)
+const forensicsLoading = ref(false)
 const compliance = ref<unknown>(null)
 const complianceDays = ref(30)
 const range = ref<[Date, Date] | null>(null)
@@ -122,7 +124,12 @@ function queryParams() {
 }
 
 async function doQuery() {
-  events.value = await ops.audit.query(queryParams())
+  eventsLoading.value = true
+  try {
+    events.value = await ops.audit.query(queryParams())
+  } finally {
+    eventsLoading.value = false
+  }
 }
 
 function resetQ() {
@@ -154,7 +161,12 @@ async function verify() {
 }
 
 async function loadForensics() {
-  forensics.value = await ops.audit.forensics()
+  forensicsLoading.value = true
+  try {
+    forensics.value = await ops.audit.forensics()
+  } finally {
+    forensicsLoading.value = false
+  }
 }
 
 async function loadCompliance() {
