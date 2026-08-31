@@ -345,8 +345,7 @@ async function toggleRule(row: Record<string, any>, enabled: boolean) {
 
 async function simulate() {
   const result = await api.monitor.simulate({})
-  ElMessage.success(`模拟完成，命中 ${result.length} 条`)
-  await loadAlerts()
+  ElMessage.success(`模拟完成：命中 ${result.length} 条规则（演练不产生告警）`)
 }
 
 async function runRiskScan() {

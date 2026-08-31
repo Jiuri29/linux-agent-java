@@ -155,8 +155,26 @@ public class MonitoringService {
     }
 
     public List<Map<String, Object>> simulate(Map<String, Object> body) {
-        Map<String, Double> flat = extractMetrics(body);
+        Map<String, Double> flat;
+        try {
+            flat = extractMetrics(body);
+        } catch (AppException e) {
+            // 未显式提供指标时，回退使用最近一次采集快照的指标做规则演练
+            flat = latestFlatMetrics();
+            if (flat.isEmpty()) {
+                throw AppException.validation(
+                        "no metrics in request and no captured snapshot available yet; capture a snapshot first");
+            }
+        }
         return evaluate(flat, "simulated-host", true);
+    }
+
+    private Map<String, Double> latestFlatMetrics() {
+        Map<String, Object> latest = latest();
+        if (latest != null && latest.get("metrics") instanceof Map) {
+            return toStringDoubleMap(latest.get("metrics"));
+        }
+        return new LinkedHashMap<>();
     }
 
     public List<MonitorRepository.Alert> alerts(String status) {

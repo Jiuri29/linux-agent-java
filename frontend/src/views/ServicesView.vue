@@ -62,10 +62,11 @@
       <el-tab-pane label="生命周期与变更" name="lifecycle">
         <div class="toolbar">
           <el-select v-model="action" style="width: 160px">
-            <el-option value="deploy" label="deploy" />
             <el-option value="start" label="start" />
             <el-option value="stop" label="stop" />
             <el-option value="restart" label="restart" />
+            <el-option value="enable" label="enable" />
+            <el-option value="disable" label="disable" />
           </el-select>
           <el-button type="primary" @click="runLifecycle">执行</el-button>
         </div>
@@ -125,7 +126,7 @@ const changes = ref<Record<string, any>[]>([])
 const changesLoading = ref(false)
 const diffText = ref('')
 const readResult = ref<unknown>(null)
-const action = ref('deploy')
+const action = ref('restart')
 
 const detail = reactive({ visible: false, id: '', tab: 'versions' })
 const edit = reactive({ visible: false })
@@ -238,7 +239,7 @@ async function readConfig() {
 }
 
 async function runLifecycle() {
-  await api.services.lifecycle({ id: detail.id, action: action.value })
+  await api.services.lifecycle({ service_id: detail.id, action: action.value })
   ElMessage.success(`已执行 ${action.value}`)
   await loadChanges()
 }
